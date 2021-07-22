@@ -33,6 +33,7 @@ import io.netty.util.ReferenceCountUtil;
 import io.netty.util.internal.PlatformDependent;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -58,29 +59,12 @@ public class HttpContentDecoderTest {
             31, -117, 8, 8, 12, 3, -74, 84, 0, 3, 50, 0, -53, 72, -51, -55, -55,
             -41, 81, 40, -49, 47, -54, 73, 1, 0, 58, 114, -85, -1, 12, 0, 0, 0
     };
-    private static final String SAMPLE_STRING;
-    private static final byte[] SAMPLE_BZ_BYTES;
-
-    static {
-        InputStream uncompressed = HttpContentDecoderTest.class.getClassLoader()
-          .getResourceAsStream("sample.json");
-        try {
-            SAMPLE_STRING = IOUtils.toString(uncompressed, CharsetUtil.UTF_8);
-        } catch (Throwable e) {
-            throw new ExceptionInInitializerError(e);
-        } finally {
-            IOUtils.closeQuietly(uncompressed, null);
-        }
-        InputStream compressed = HttpContentDecoderTest.class.getClassLoader()
-          .getResourceAsStream("sample.json.br");
-        try {
-            SAMPLE_BZ_BYTES = IOUtils.toByteArray(compressed);
-        } catch (Throwable e) {
-            throw new ExceptionInInitializerError(e);
-        } finally {
-            IOUtils.closeQuietly(compressed, null);
-        }
-    }
+    private static final String SAMPLE_STRING = "Hello, I am Meow!. A small kitten. :)" +
+            "I sleep all day, and meow all night.";;
+    private static final byte[] SAMPLE_BZ_BYTES = new byte[]{27, 72, 0, 0, -60, -102, 91, -86, 103, 20,
+            -28, -23, 54, -101, 11, -106, -16, -32, -95, -61, -37, 94, -16, 97, -40, -93, -56, 18, 21, 86,
+            -110, 82, -41, 102, -89, 20, 11, 10, -68, -31, 96, -116, -55, -80, -31, -91, 96, -64, 83, 51,
+            -39, 13, -21, 92, -16, -119, 124, -31, 18, 78, -1, 91, 82, 105, -116, -95, -22, -11, -70, -45, 0};
 
     @Test
     public void testBinaryDecompression() throws Exception {
@@ -192,11 +176,11 @@ public class HttpContentDecoderTest {
         assertFalse(channel.finish()); // assert that no messages are left in channel
     }
 
+    @DisabledIf(value = "isNotSupported", disabledReason = "Brotli is not supported on this platform")
     @Test
     public void testResponseBrotliDecompression() throws Throwable {
         Brotli.ensureAvailability();
-        // Failing on windows atm
-        assumeFalse(PlatformDependent.isWindows());
+
         HttpResponseDecoder decoder = new HttpResponseDecoder();
         HttpContentDecoder decompressor = new HttpContentDecompressor();
         HttpObjectAggregator aggregator = new HttpObjectAggregator(Integer.MAX_VALUE);
@@ -213,11 +197,8 @@ public class HttpContentDecoderTest {
         assertThat(o, is(instanceOf(FullHttpResponse.class)));
         FullHttpResponse resp = (FullHttpResponse) o;
         assertNull(resp.headers().get(HttpHeaderNames.CONTENT_ENCODING), "Content-Encoding header should be removed");
-        assertEquals(SAMPLE_STRING.length(),
-          resp.headers().getInt(HttpHeaderNames.CONTENT_LENGTH).intValue(),
-          "Content-Length header should match uncompressed string's length");
         assertEquals(SAMPLE_STRING, resp.content().toString(CharsetUtil.UTF_8),
-          "Response body should match uncompressed string");
+                "Response body should match uncompressed string");
         resp.release();
 
         assertHasInboundMessages(channel, false);
@@ -225,11 +206,11 @@ public class HttpContentDecoderTest {
         assertFalse(channel.finish()); // assert that no messages are left in channel
     }
 
+    @DisabledIf(value = "isNotSupported", disabledReason = "Brotli is not supported on this platform")
     @Test
     public void testResponseChunksBrotliDecompression() throws Throwable {
         Brotli.ensureAvailability();
-        // Failing on windows atm
-        assumeFalse(PlatformDependent.isWindows());
+
         HttpResponseDecoder decoder = new HttpResponseDecoder();
         HttpContentDecoder decompressor = new HttpContentDecompressor();
         HttpObjectAggregator aggregator = new HttpObjectAggregator(Integer.MAX_VALUE);
@@ -257,9 +238,6 @@ public class HttpContentDecoderTest {
         Object o = channel.readInbound();
         assertThat(o, is(instanceOf(FullHttpResponse.class)));
         FullHttpResponse resp = (FullHttpResponse) o;
-        assertEquals(SAMPLE_STRING.length(),
-          resp.headers().getInt(HttpHeaderNames.CONTENT_LENGTH).intValue(),
-          "Content-Length header should match uncompressed string's length");
         assertEquals(SAMPLE_STRING, resp.content().toString(CharsetUtil.UTF_8),
           "Response body should match uncompressed string");
         resp.release();
@@ -859,5 +837,9 @@ public class HttpContentDecoderTest {
             o = channel.readOutbound();
             assertNull(o);
         }
+    }
+
+    static boolean isNotSupported() {
+        return PlatformDependent.isOsx() && "aarch_64".equals(PlatformDependent.normalizedArch());
     }
 }

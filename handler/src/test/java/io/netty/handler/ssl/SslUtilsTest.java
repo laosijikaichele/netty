@@ -17,7 +17,7 @@ package io.netty.handler.ssl;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -27,9 +27,9 @@ import java.nio.ByteOrder;
 import java.security.NoSuchAlgorithmException;
 
 import static io.netty.handler.ssl.SslUtils.getEncryptedPacketLength;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SslUtilsTest {
 
@@ -75,4 +75,29 @@ public class SslUtilsTest {
         assertFalse(SslUtils.isTLSv13Cipher("TLS_DHE_RSA_WITH_AES_128_GCM_SHA256"));
     }
 
+    @Test
+    public void shouldGetPacketLengthOfGmsslProtocolFromByteBuf() {
+        int bodyLength = 65;
+        ByteBuf buf = Unpooled.buffer()
+                              .writeByte(SslUtils.SSL_CONTENT_TYPE_HANDSHAKE)
+                              .writeShort(SslUtils.GMSSL_PROTOCOL_VERSION)
+                              .writeShort(bodyLength);
+
+        int packetLength = getEncryptedPacketLength(buf, 0);
+        assertEquals(bodyLength + SslUtils.SSL_RECORD_HEADER_LENGTH, packetLength);
+        buf.release();
+    }
+
+    @Test
+    public void shouldGetPacketLengthOfGmsslProtocolFromByteBuffer() {
+        int bodyLength = 65;
+        ByteBuf buf = Unpooled.buffer()
+                              .writeByte(SslUtils.SSL_CONTENT_TYPE_HANDSHAKE)
+                              .writeShort(SslUtils.GMSSL_PROTOCOL_VERSION)
+                              .writeShort(bodyLength);
+
+        int packetLength = getEncryptedPacketLength(new ByteBuffer[] { buf.nioBuffer() }, 0);
+        assertEquals(bodyLength + SslUtils.SSL_RECORD_HEADER_LENGTH, packetLength);
+        buf.release();
+    }
 }

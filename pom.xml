@@ -26,7 +26,7 @@
   <groupId>io.netty</groupId>
   <artifactId>netty-parent</artifactId>
   <packaging>pom</packaging>
-  <version>4.1.66.Final-SNAPSHOT</version>
+  <version>4.1.67.Final-SNAPSHOT</version>
 
   <name>Netty</name>
   <url>https://netty.io/</url>
@@ -216,6 +216,9 @@
         <jdk>15</jdk>
       </activation>
       <properties>
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
         <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
         <argLine.alpnAgent />
         <forbiddenapis.skip>true</forbiddenapis.skip>
@@ -237,6 +240,9 @@
         <jdk>14</jdk>
       </activation>
       <properties>
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
         <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
         <argLine.alpnAgent />
         <forbiddenapis.skip>true</forbiddenapis.skip>
@@ -258,6 +264,9 @@
         <jdk>13</jdk>
       </activation>
       <properties>
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
         <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
         <argLine.alpnAgent />
         <forbiddenapis.skip>true</forbiddenapis.skip>
@@ -477,7 +486,7 @@
     <!-- keep in sync with PlatformDependent#ALLOWED_LINUX_OS_CLASSIFIERS -->
     <os.detection.classifierWithLikes>fedora,suse,arch</os.detection.classifierWithLikes>
     <tcnative.artifactId>netty-tcnative</tcnative.artifactId>
-    <tcnative.version>2.0.39.Final</tcnative.version>
+    <tcnative.version>2.0.40.Final</tcnative.version>
     <tcnative.classifier>${os.detected.classifier}</tcnative.classifier>
     <conscrypt.groupId>org.conscrypt</conscrypt.groupId>
     <conscrypt.artifactId>conscrypt-openjdk-uber</conscrypt.artifactId>
@@ -495,7 +504,7 @@
     <skipAutobahnTestsuite>false</skipAutobahnTestsuite>
     <skipHttp2Testsuite>false</skipHttp2Testsuite>
     <skipJapicmp>false</skipJapicmp>
-    <graalvm.version>19.2.1</graalvm.version>
+    <graalvm.version>19.3.6</graalvm.version>
     <brotli4j.version>1.4.2</brotli4j.version>
     <!-- By default skip native testsuite as it requires a custom environment with graalvm installed -->
     <skipNativeImageTestsuite>true</skipNativeImageTestsuite>
@@ -523,7 +532,6 @@
     <module>resolver</module>
     <module>resolver-dns</module>
     <module>resolver-dns-native-macos</module>
-    <module>tarball</module>
     <module>transport</module>
     <module>transport-native-unix-common-tests</module>
     <module>transport-native-unix-common</module>
@@ -617,7 +625,7 @@
         <optional>true</optional>
       </dependency>
 
-      <!-- Conscrypt - needed for running tests, used for acclerating SSL with OpenSSL. -->
+      <!-- Conscrypt - needed for running tests, used for accelerating SSL with OpenSSL. -->
       <dependency>
         <groupId>${conscrypt.groupId}</groupId>
         <artifactId>${conscrypt.artifactId}</artifactId>
@@ -635,7 +643,7 @@
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpkix-jdk15on</artifactId>
-        <version>1.68</version>
+        <version>1.69</version>
         <scope>compile</scope>
         <optional>true</optional>
       </dependency>
@@ -647,7 +655,7 @@
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
-        <version>1.68</version>
+        <version>1.69</version>
         <scope>compile</scope>
         <optional>true</optional>
       </dependency>
@@ -677,6 +685,12 @@
         <groupId>com.github.jponge</groupId>
         <artifactId>lzma-java</artifactId>
         <version>1.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.luben</groupId>
+        <artifactId>zstd-jni</artifactId>
+        <version>1.5.0-2</version>
+        <optional>true</optional>
       </dependency>
       <dependency>
         <groupId>com.aayushatharva.brotli4j</groupId>
@@ -1316,9 +1330,6 @@
           <skip>${skipDeploy}</skip>
         </configuration>
       </plugin>
-      <!-- After artifacts were deployed from linux and macos we need to execute the following on macOS (in the root of the project).
-           mvn -Psonatype-oss-release,full,uber-staging -pl transport-native-kqueue,transport-native-unix-common,all,tarball clean package gpg:sign org.sonatype.plugins:nexus-staging-maven-plugin:deploy -DstagingRepositoryId=${netty-id} -DnexusUrl=https://oss.sonatype.org -DserverId=sonatype-nexus-staging
-      -->
       <plugin>
         <artifactId>maven-release-plugin</artifactId>
         <!-- Downgrade to 2.4.1 if release fails -->

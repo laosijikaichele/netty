@@ -47,14 +47,18 @@ import io.netty.util.concurrent.Promise;
 import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.internal.EmptyArrays;
 import io.netty.util.internal.ResourcesUtil;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.KeyStore;
@@ -65,19 +69,20 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.buffer.ByteBufUtil.writeAscii;
 import static io.netty.util.internal.ThreadLocalRandom.current;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Parameterized.class)
 public class ParameterizedSslHandlerTest {
 
-    @Parameterized.Parameters(name = "{index}: clientProvider={0}, {index}: serverProvider={1}")
-    public static Collection<Object[]> data() {
+    private static final String PARAMETERIZED_NAME = "{index}: clientProvider={0}, {index}: serverProvider={1}";
+
+    static Collection<Object[]> data() {
         List<SslProvider> providers = new ArrayList<SslProvider>(3);
         if (OpenSsl.isAvailable()) {
             providers.add(SslProvider.OPENSSL);
@@ -95,16 +100,11 @@ public class ParameterizedSslHandlerTest {
         return params;
     }
 
-    private final SslProvider clientProvider;
-    private final SslProvider serverProvider;
-
-    public ParameterizedSslHandlerTest(SslProvider clientProvider, SslProvider serverProvider) {
-        this.clientProvider = clientProvider;
-        this.serverProvider = serverProvider;
-    }
-
-    @Test(timeout = 480000)
-    public void testCompositeBufSizeEstimationGuaranteesSynchronousWrite()
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 48000, unit = TimeUnit.MILLISECONDS)
+    public void testCompositeBufSizeEstimationGuaranteesSynchronousWrite(
+            SslProvider clientProvider, SslProvider serverProvider)
             throws CertificateException, SSLException, ExecutionException, InterruptedException {
         compositeBufSizeEstimationGuaranteesSynchronousWrite(serverProvider, clientProvider,
                 true, true, true);
@@ -277,8 +277,10 @@ public class ParameterizedSslHandlerTest {
         }
     }
 
-    @Test(timeout = 30000)
-    public void testAlertProducedAndSend() throws Exception {
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void testAlertProducedAndSend(SslProvider clientProvider, SslProvider serverProvider) throws Exception {
         SelfSignedCertificate ssc = new SelfSignedCertificate();
 
         final SslContext sslServerCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
@@ -375,22 +377,31 @@ public class ParameterizedSslHandlerTest {
         }
     }
 
-    @Test(timeout = 30000)
-    public void testCloseNotify() throws Exception {
-        testCloseNotify(5000, false);
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void testCloseNotify(SslProvider clientProvider, SslProvider serverProvider) throws Exception {
+        testCloseNotify(clientProvider, serverProvider, 5000, false);
     }
 
-    @Test(timeout = 30000)
-    public void testCloseNotifyReceivedTimeout() throws Exception {
-        testCloseNotify(100, true);
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void testCloseNotifyReceivedTimeout(SslProvider clientProvider, SslProvider serverProvider)
+            throws Exception {
+        testCloseNotify(clientProvider, serverProvider, 100, true);
     }
 
-    @Test(timeout = 30000)
-    public void testCloseNotifyNotWaitForResponse() throws Exception {
-        testCloseNotify(0, false);
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void testCloseNotifyNotWaitForResponse(SslProvider clientProvider, SslProvider serverProvider)
+            throws Exception {
+        testCloseNotify(clientProvider, serverProvider, 0, false);
     }
 
-    private void testCloseNotify(final long closeNotifyReadTimeout, final boolean timeout) throws Exception {
+    private void testCloseNotify(SslProvider clientProvider, SslProvider serverProvider,
+                                 final long closeNotifyReadTimeout, final boolean timeout) throws Exception {
         SelfSignedCertificate ssc = new SelfSignedCertificate();
 
         final SslContext sslServerCtx = SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
@@ -398,7 +409,7 @@ public class ParameterizedSslHandlerTest {
                                                          // Use TLSv1.2 as we depend on the fact that the handshake
                                                          // is done in an extra round trip in the test which
                                                          // is not true in TLSv1.3
-                                                         .protocols(SslUtils.PROTOCOL_TLS_V1_2)
+                                                         .protocols(SslProtocols.TLS_v1_2)
                                                          .build();
 
         final SslContext sslClientCtx = SslContextBuilder.forClient()
@@ -407,7 +418,7 @@ public class ParameterizedSslHandlerTest {
                                                          // Use TLSv1.2 as we depend on the fact that the handshake
                                                          // is done in an extra round trip in the test which
                                                          // is not true in TLSv1.3
-                                                         .protocols(SslUtils.PROTOCOL_TLS_V1_2)
+                                                         .protocols(SslProtocols.TLS_v1_2)
                                                          .build();
 
         EventLoopGroup group = new NioEventLoopGroup();
@@ -425,8 +436,7 @@ public class ParameterizedSslHandlerTest {
                         protected void initChannel(Channel ch) throws Exception {
                             SslHandler handler = sslServerCtx.newHandler(ch.alloc());
                             handler.setCloseNotifyReadTimeoutMillis(closeNotifyReadTimeout);
-                            handler.sslCloseFuture().addListener(
-                                    new PromiseNotifier<Channel, Future<Channel>>(serverPromise));
+                            PromiseNotifier.cascade(handler.sslCloseFuture(), serverPromise);
                             handler.handshakeFuture().addListener(new FutureListener<Channel>() {
                                 @Override
                                 public void operationComplete(Future<Channel> future) {
@@ -464,8 +474,7 @@ public class ParameterizedSslHandlerTest {
 
                             SslHandler handler = sslClientCtx.newHandler(ch.alloc());
                             handler.setCloseNotifyReadTimeoutMillis(closeNotifyReadTimeout);
-                            handler.sslCloseFuture().addListener(
-                                    new PromiseNotifier<Channel, Future<Channel>>(clientPromise));
+                            PromiseNotifier.cascade(handler.sslCloseFuture(), clientPromise);
                             handler.handshakeFuture().addListener(new FutureListener<Channel>() {
                                 @Override
                                 public void operationComplete(Future<Channel> future) {
@@ -508,39 +517,54 @@ public class ParameterizedSslHandlerTest {
         }
     }
 
-    @Test(timeout = 30000)
-    public void reentryOnHandshakeCompleteNioChannel() throws Exception {
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void reentryOnHandshakeCompleteNioChannel(SslProvider clientProvider, SslProvider serverProvider)
+            throws Exception {
         EventLoopGroup group = new NioEventLoopGroup();
         try {
             Class<? extends ServerChannel> serverClass = NioServerSocketChannel.class;
             Class<? extends Channel> clientClass = NioSocketChannel.class;
             SocketAddress bindAddress = new InetSocketAddress(0);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, false, false);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, false, true);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, true, false);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, true, true);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, false, false);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, false, true);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, true, false);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, true, true);
         } finally {
             group.shutdownGracefully();
         }
     }
 
-    @Test(timeout = 30000)
-    public void reentryOnHandshakeCompleteLocalChannel() throws Exception {
+    @ParameterizedTest(name = PARAMETERIZED_NAME)
+    @MethodSource("data")
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void reentryOnHandshakeCompleteLocalChannel(SslProvider clientProvider, SslProvider serverProvider)
+            throws Exception {
         EventLoopGroup group = new DefaultEventLoopGroup();
         try {
             Class<? extends ServerChannel> serverClass = LocalServerChannel.class;
             Class<? extends Channel> clientClass = LocalChannel.class;
             SocketAddress bindAddress = new LocalAddress(String.valueOf(current().nextLong()));
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, false, false);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, false, true);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, true, false);
-            reentryOnHandshakeComplete(group, bindAddress, serverClass, clientClass, true, true);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, false, false);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, false, true);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, true, false);
+            reentryOnHandshakeComplete(clientProvider, serverProvider, group, bindAddress,
+                    serverClass, clientClass, true, true);
         } finally {
             group.shutdownGracefully();
         }
     }
 
-    private void reentryOnHandshakeComplete(EventLoopGroup group, SocketAddress bindAddress,
+    private void reentryOnHandshakeComplete(SslProvider clientProvider, SslProvider serverProvider,
+                                            EventLoopGroup group, SocketAddress bindAddress,
                                             Class<? extends ServerChannel> serverClass,
                                             Class<? extends Channel> clientClass, boolean serverAutoRead,
                                             boolean clientAutoRead) throws Exception {
@@ -657,8 +681,23 @@ public class ParameterizedSslHandlerTest {
         }
 
         private void appendError(Throwable cause) {
-            readQueue.append("failed to write '").append(toWrite).append("': ").append(cause);
-            doneLatch.countDown();
+            readQueue.append("failed to write '").append(toWrite).append("': ");
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            try {
+                cause.printStackTrace(new PrintStream(out));
+                readQueue.append(out.toString(CharsetUtil.US_ASCII.name()));
+            } catch (UnsupportedEncodingException ignore) {
+                // Let's just fallback to using toString().
+                readQueue.append(cause);
+            } finally {
+                doneLatch.countDown();
+                try {
+                    out.close();
+                } catch (IOException ignore) {
+                    // ignore
+                }
+            }
         }
     }
 }

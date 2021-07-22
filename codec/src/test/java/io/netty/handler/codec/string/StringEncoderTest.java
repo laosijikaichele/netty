@@ -21,6 +21,8 @@ import io.netty.util.CharsetUtil;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 public class StringEncoderTest {
 
     @Test
@@ -35,5 +37,6 @@ public class StringEncoderTest {
         Assertions.assertArrayEquals(msg.getBytes(CharsetUtil.UTF_8), data);
         Assertions.assertNull(channel.readOutbound());
         buf.release();
+        assertFalse(channel.finish());
     }
 }
