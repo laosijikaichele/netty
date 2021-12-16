@@ -76,22 +76,25 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     // Workaround for JDK NIO bug.
     //
     // See:
-    // - https://bugs.java.com/view_bug.do?bug_id=6427854
+    // - https://bugs.openjdk.java.net/browse/JDK-6427854 for first few dev (unreleased) builds of JDK 7
+    // - https://bugs.openjdk.java.net/browse/JDK-6527572 for JDK prior to 5.0u15-rev and 6u10
     // - https://github.com/netty/netty/issues/203
     static {
-        final String key = "sun.nio.ch.bugLevel";
-        final String bugLevel = SystemPropertyUtil.get(key);
-        if (bugLevel == null) {
-            try {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        System.setProperty(key, "");
-                        return null;
-                    }
-                });
-            } catch (final SecurityException e) {
-                logger.debug("Unable to get/set System Property: " + key, e);
+        if (PlatformDependent.javaVersion() < 7) {
+            final String key = "sun.nio.ch.bugLevel";
+            final String bugLevel = SystemPropertyUtil.get(key);
+            if (bugLevel == null) {
+                try {
+                    AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                        @Override
+                        public Void run() {
+                            System.setProperty(key, "");
+                            return null;
+                        }
+                    });
+                } catch (final SecurityException e) {
+                    logger.debug("Unable to get/set System Property: " + key, e);
+                }
             }
         }
 
@@ -516,7 +519,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                             selector, e);
                 }
             } catch (Error e) {
-                throw (Error) e;
+                throw e;
             } catch (Throwable t) {
                 handleLoopException(t);
             } finally {
@@ -529,7 +532,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                         }
                     }
                 } catch (Error e) {
-                    throw (Error) e;
+                    throw e;
                 } catch (Throwable t) {
                     handleLoopException(t);
                 }

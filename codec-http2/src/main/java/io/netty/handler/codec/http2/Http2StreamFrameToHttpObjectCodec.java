@@ -78,7 +78,7 @@ public class Http2StreamFrameToHttpObjectCodec extends MessageToMessageCodec<Htt
 
     @Override
     public boolean acceptInboundMessage(Object msg) throws Exception {
-        return (msg instanceof Http2HeadersFrame) || (msg instanceof Http2DataFrame);
+        return msg instanceof Http2HeadersFrame || msg instanceof Http2DataFrame;
     }
 
     @Override
@@ -162,7 +162,7 @@ public class Http2StreamFrameToHttpObjectCodec extends MessageToMessageCodec<Htt
                     return;
                 } else {
                     throw new EncoderException(
-                            HttpResponseStatus.CONTINUE.toString() + " must be a FullHttpResponse");
+                            HttpResponseStatus.CONTINUE + " must be a FullHttpResponse");
                 }
             }
         }

@@ -41,7 +41,7 @@ import io.netty.util.CharsetUtil;
 import io.netty.util.NetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.ImmediateEventExecutor;
-import io.netty.util.concurrent.UnaryPromiseNotifier;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.internal.ResourcesUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.Promise;
@@ -104,6 +104,7 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.KeyManagerFactorySpi;
 import javax.net.ssl.ManagerFactoryParameters;
 import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -780,11 +781,11 @@ public abstract class SSLEngineTest {
     protected void mySetupMutualAuthServerInitSslHandler(SslHandler handler) {
     }
 
-    private void mySetupMutualAuth(final SSLEngineTestParam param, KeyManagerFactory serverKMF,
-                                   final File serverTrustManager,
-                                   KeyManagerFactory clientKMF, File clientTrustManager,
-                                   ClientAuth clientAuth, final boolean failureExpected,
-                                   final boolean serverInitEngine)
+    protected void mySetupMutualAuth(final SSLEngineTestParam param, KeyManagerFactory serverKMF,
+                                     final File serverTrustManager,
+                                     KeyManagerFactory clientKMF, File clientTrustManager,
+                                     ClientAuth clientAuth, final boolean failureExpected,
+                                     final boolean serverInitEngine)
             throws SSLException, InterruptedException {
         serverSslCtx =
                 wrapContext(param, SslContextBuilder.forServer(serverKMF)
@@ -908,7 +909,7 @@ public abstract class SSLEngineTest {
         clientChannel = ccf.channel();
     }
 
-    private static void rethrowIfNotNull(Throwable error) {
+    protected static void rethrowIfNotNull(Throwable error) {
         if (error != null) {
             throw new AssertionFailedError("Expected no error", error);
         }
@@ -1053,8 +1054,8 @@ public abstract class SSLEngineTest {
                         // through we just want to verify the local failure condition. This way we don't have to worry
                         // about verifying the payload and releasing the content on the server side.
                         if (failureExpected) {
-                            ctx.write(ctx.alloc().buffer(1).writeByte(1))
-                                    .addListener(new UnaryPromiseNotifier<Void>(clientWritePromise));
+                            ChannelFuture f = ctx.write(ctx.alloc().buffer(1).writeByte(1));
+                            PromiseNotifier.cascade(f, clientWritePromise);
                         }
                     }
 
@@ -2977,11 +2978,22 @@ public abstract class SSLEngineTest {
     @MethodSource("newTestParams")
     @ParameterizedTest
     public void testUsingX509TrustManagerVerifiesHostname(SSLEngineTestParam param) throws Exception {
+        testUsingX509TrustManagerVerifiesHostname(param, false);
+    }
+
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    public void testUsingX509TrustManagerVerifiesSNIHostname(SSLEngineTestParam param) throws Exception {
+        testUsingX509TrustManagerVerifiesHostname(param, true);
+    }
+
+    private void testUsingX509TrustManagerVerifiesHostname(SSLEngineTestParam param, boolean useSNI) throws Exception {
         if (clientSslContextProvider() != null) {
             // Not supported when using conscrypt
             return;
         }
-        SelfSignedCertificate cert = new SelfSignedCertificate();
+        String fqdn = "something.netty.io";
+        SelfSignedCertificate cert = new SelfSignedCertificate(fqdn);
         clientSslCtx = wrapContext(param, SslContextBuilder
                 .forClient()
                 .trustManager(new TrustManagerFactory(new TrustManagerFactorySpi() {
@@ -3023,9 +3035,12 @@ public abstract class SSLEngineTest {
                 .sslProvider(sslClientProvider())
                 .build());
 
-        SSLEngine client = wrapEngine(clientSslCtx.newEngine(UnpooledByteBufAllocator.DEFAULT, "netty.io", 1234));
+        SSLEngine client = wrapEngine(clientSslCtx.newEngine(UnpooledByteBufAllocator.DEFAULT, "127.0.0.1", 1234));
         SSLParameters sslParameters = client.getSSLParameters();
         sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+        if (useSNI) {
+            sslParameters.setServerNames(Collections.<SNIServerName>singletonList(new SNIHostName(fqdn)));
+        }
         client.setSSLParameters(sslParameters);
 
         serverSslCtx = wrapContext(param, SslContextBuilder
@@ -3037,8 +3052,13 @@ public abstract class SSLEngineTest {
         SSLEngine server = wrapEngine(serverSslCtx.newEngine(UnpooledByteBufAllocator.DEFAULT));
         try {
             handshake(param.type(), param.delegate(), client, server);
-            fail();
-        } catch (SSLException expected) {
+            if (!useSNI) {
+                fail();
+            }
+        } catch (SSLException exception) {
+            if (useSNI) {
+                throw exception;
+            }
             // expected as the hostname not matches.
         } finally {
             cleanupClientSslEngine(client);
@@ -4160,6 +4180,67 @@ public abstract class SSLEngineTest {
                 arrayContains(clientProtocols, SslProtocols.TLS_v1_3));
         assertEquals(SslProvider.isTlsv13EnabledByDefault(sslServerProvider(), serverSslContextProvider()),
                 arrayContains(serverProtocols, SslProtocols.TLS_v1_3));
+    }
+
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    public void testRSASSAPSS(SSLEngineTestParam param) throws Exception {
+        char[] password = "password".toCharArray();
+
+        final KeyStore serverKeyStore = KeyStore.getInstance("PKCS12");
+        serverKeyStore.load(getClass().getResourceAsStream("rsaValidations-server-keystore.p12"), password);
+
+        final KeyStore clientKeyStore = KeyStore.getInstance("PKCS12");
+        clientKeyStore.load(getClass().getResourceAsStream("rsaValidation-user-certs.p12"), password);
+
+        final KeyManagerFactory serverKeyManagerFactory =
+                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        serverKeyManagerFactory.init(serverKeyStore, password);
+        final KeyManagerFactory clientKeyManagerFactory =
+                KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        clientKeyManagerFactory.init(clientKeyStore, password);
+
+        File commonChain = ResourcesUtil.getFile(getClass(), "rsapss-ca-cert.cert");
+        ClientAuth auth = ClientAuth.REQUIRE;
+
+        mySetupMutualAuth(param, serverKeyManagerFactory, commonChain, clientKeyManagerFactory, commonChain,
+                auth, false, true);
+
+        assertTrue(clientLatch.await(10, TimeUnit.SECONDS));
+        rethrowIfNotNull(clientException);
+        assertTrue(serverLatch.await(5, TimeUnit.SECONDS));
+        rethrowIfNotNull(serverException);
+    }
+
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    public void testInvalidSNIIsIgnoredAndNotThrow(SSLEngineTestParam param) throws Exception {
+        clientSslCtx = wrapContext(param, SslContextBuilder.forClient()
+                .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                .sslProvider(sslClientProvider())
+                .sslContextProvider(clientSslContextProvider())
+                .protocols(param.protocols())
+                .ciphers(param.ciphers())
+                .build());
+        SelfSignedCertificate ssc = new SelfSignedCertificate();
+        serverSslCtx = wrapContext(param, SslContextBuilder.forServer(ssc.certificate(), ssc.privateKey())
+                .sslProvider(sslServerProvider())
+                .sslContextProvider(serverSslContextProvider())
+                .protocols(param.protocols())
+                .ciphers(param.ciphers())
+                .build());
+        SSLEngine clientEngine = null;
+        SSLEngine serverEngine = null;
+        try {
+            clientEngine = wrapEngine(clientSslCtx.newEngine(UnpooledByteBufAllocator.DEFAULT, "/invalid.path", 80));
+            serverEngine = wrapEngine(serverSslCtx.newEngine(UnpooledByteBufAllocator.DEFAULT));
+            handshake(param.type(), param.delegate(), clientEngine, serverEngine);
+            assertNotNull(clientEngine.getSSLParameters());
+            assertNotNull(serverEngine.getSSLParameters());
+        } finally {
+            cleanupClientSslEngine(clientEngine);
+            cleanupServerSslEngine(serverEngine);
+        }
     }
 
     protected SSLEngine wrapEngine(SSLEngine engine) {

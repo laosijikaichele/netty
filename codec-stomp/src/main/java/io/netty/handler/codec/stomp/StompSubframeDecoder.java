@@ -26,6 +26,7 @@ import io.netty.handler.codec.stomp.StompSubframeDecoder.State;
 import io.netty.util.ByteProcessor;
 import io.netty.util.internal.AppendableCharSequence;
 import io.netty.util.internal.StringUtil;
+import io.netty.util.internal.UnstableApi;
 
 import java.util.List;
 
@@ -55,7 +56,8 @@ public class StompSubframeDecoder extends ReplayingDecoder<State> {
     private static final int DEFAULT_CHUNK_SIZE = 8132;
     private static final int DEFAULT_MAX_LINE_LENGTH = 1024;
 
-    enum State {
+    @UnstableApi
+    public enum State {
         SKIP_CONTROL_CHARACTERS,
         READ_HEADERS,
         READ_CONTENT,
@@ -175,6 +177,11 @@ public class StompSubframeDecoder extends ReplayingDecoder<State> {
                     resetDecoder();
             }
         } catch (Exception e) {
+            if (lastContent != null) {
+                lastContent.release();
+                lastContent = null;
+            }
+
             StompContentSubframe errorContent = new DefaultLastStompContentSubframe(Unpooled.EMPTY_BUFFER);
             errorContent.setDecoderResult(DecoderResult.failure(e));
             out.add(errorContent);
@@ -342,9 +349,9 @@ public class StompSubframeDecoder extends ReplayingDecoder<State> {
                 headers.add(name, value.toString());
             } else if (validateHeaders) {
                 if (StringUtil.isNullOrEmpty(name)) {
-                    throw new IllegalArgumentException("received an invalid header line '" + value.toString() + '\'');
+                    throw new IllegalArgumentException("received an invalid header line '" + value + '\'');
                 }
-                String line = name + ':' + value.toString();
+                String line = name + ':' + value;
                 throw new IllegalArgumentException("a header value or name contains a prohibited character ':'"
                                                    + ", " + line);
             }

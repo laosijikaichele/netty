@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.netty</groupId>
     <artifactId>netty-parent</artifactId>
-    <version>4.1.67.Final-SNAPSHOT</version>
+    <version>4.1.73.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>netty-handler</artifactId>
@@ -59,6 +59,10 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>netty-codec</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>netty-tcnative-classes</artifactId>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

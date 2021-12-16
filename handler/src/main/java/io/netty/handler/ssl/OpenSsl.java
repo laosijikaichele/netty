@@ -38,6 +38,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -67,6 +68,12 @@ public final class OpenSsl {
     static final Set<String> SUPPORTED_PROTOCOLS_SET;
     static final String[] EXTRA_SUPPORTED_TLS_1_3_CIPHERS;
     static final String EXTRA_SUPPORTED_TLS_1_3_CIPHERS_STRING;
+    static final String[] NAMED_GROUPS;
+
+    // Use default that is supported in java 11 and earlier and also in OpenSSL / BoringSSL.
+    // See https://github.com/netty/netty-tcnative/issues/567
+    // See https://www.java.com/en/configure_crypto.html for ordering
+    private static final String[] DEFAULT_NAMED_GROUPS = { "x25519", "secp256r1", "secp384r1", "secp521r1" };
 
     // self-signed certificate for netty.io and the matching private-key
     private static final String CERT = "-----BEGIN CERTIFICATE-----\n" +
@@ -181,6 +188,11 @@ public final class OpenSsl {
             boolean supportsKeyManagerFactory = false;
             boolean useKeyManagerFactory = false;
             boolean tlsv13Supported = false;
+            String[] namedGroups = DEFAULT_NAMED_GROUPS;
+            String[] defaultConvertedNamedGroups = new String[namedGroups.length];
+            for (int i = 0; i < namedGroups.length; i++) {
+                defaultConvertedNamedGroups[i] = GroupsConverter.toOpenSsl(namedGroups[i]);
+            }
 
             IS_BORINGSSL = "BoringSSL".equals(versionString());
             if (IS_BORINGSSL) {
@@ -206,25 +218,29 @@ public final class OpenSsl {
                 long cert = 0;
                 long key = 0;
                 try {
-                    try {
-                        StringBuilder tlsv13Ciphers = new StringBuilder();
+                    // As we delegate to the KeyManager / TrustManager of the JDK we need to ensure it can actually
+                    // handle TLSv13 as otherwise we may see runtime exceptions
+                    if (SslProvider.isTlsv13Supported(SslProvider.JDK)) {
+                        try {
+                            StringBuilder tlsv13Ciphers = new StringBuilder();
 
-                        for (String cipher: TLSV13_CIPHERS) {
-                            String converted = CipherSuiteConverter.toOpenSsl(cipher, IS_BORINGSSL);
-                            if (converted != null) {
-                                tlsv13Ciphers.append(converted).append(':');
+                            for (String cipher : TLSV13_CIPHERS) {
+                                String converted = CipherSuiteConverter.toOpenSsl(cipher, IS_BORINGSSL);
+                                if (converted != null) {
+                                    tlsv13Ciphers.append(converted).append(':');
+                                }
                             }
-                        }
-                        if (tlsv13Ciphers.length() == 0) {
-                            tlsv13Supported = false;
-                        } else {
-                            tlsv13Ciphers.setLength(tlsv13Ciphers.length() - 1);
-                            SSLContext.setCipherSuite(sslCtx, tlsv13Ciphers.toString() , true);
-                            tlsv13Supported = true;
-                        }
+                            if (tlsv13Ciphers.length() == 0) {
+                                tlsv13Supported = false;
+                            } else {
+                                tlsv13Ciphers.setLength(tlsv13Ciphers.length() - 1);
+                                SSLContext.setCipherSuite(sslCtx, tlsv13Ciphers.toString(), true);
+                                tlsv13Supported = true;
+                            }
 
-                    } catch (Exception ignore) {
-                        tlsv13Supported = false;
+                        } catch (Exception ignore) {
+                            tlsv13Supported = false;
+                        }
                     }
 
                     SSLContext.setCipherSuite(sslCtx, "ALL", false);
@@ -309,12 +325,51 @@ public final class OpenSsl {
                             SSL.freePrivateKey(key);
                         }
                     }
+
+                    String groups = SystemPropertyUtil.get("jdk.tls.namedGroups", null);
+                    if (groups != null) {
+                        String[] nGroups = groups.split(",");
+                        Set<String> supportedNamedGroups = new LinkedHashSet<String>(nGroups.length);
+                        Set<String> supportedConvertedNamedGroups = new LinkedHashSet<String>(nGroups.length);
+
+                        Set<String> unsupportedNamedGroups = new LinkedHashSet<String>();
+                        for (String namedGroup : nGroups) {
+                            String converted = GroupsConverter.toOpenSsl(namedGroup);
+                            if (SSLContext.setCurvesList(sslCtx, converted)) {
+                                supportedConvertedNamedGroups.add(converted);
+                                supportedNamedGroups.add(namedGroup);
+                            } else {
+                                unsupportedNamedGroups.add(namedGroup);
+                            }
+                        }
+
+                        if (supportedNamedGroups.isEmpty()) {
+                            namedGroups = defaultConvertedNamedGroups;
+                            logger.info("All configured namedGroups are not supported: {}. Use default: {}.",
+                                    Arrays.toString(unsupportedNamedGroups.toArray(EmptyArrays.EMPTY_STRINGS)),
+                                    Arrays.toString(DEFAULT_NAMED_GROUPS));
+                        } else {
+                            String[] groupArray = supportedNamedGroups.toArray(EmptyArrays.EMPTY_STRINGS);
+                            if (unsupportedNamedGroups.isEmpty()) {
+                                logger.info("Using configured namedGroups -D 'jdk.tls.namedGroup': {} ",
+                                        Arrays.toString(groupArray));
+                            } else {
+                                logger.info("Using supported configured namedGroups: {}. Unsupported namedGroups: {}. ",
+                                        Arrays.toString(groupArray),
+                                        Arrays.toString(unsupportedNamedGroups.toArray(EmptyArrays.EMPTY_STRINGS)));
+                            }
+                            namedGroups =  supportedConvertedNamedGroups.toArray(EmptyArrays.EMPTY_STRINGS);
+                        }
+                    } else {
+                        namedGroups = defaultConvertedNamedGroups;
+                    }
                 } finally {
                     SSLContext.free(sslCtx);
                 }
             } catch (Exception e) {
                 logger.warn("Failed to get the list of available OpenSSL cipher suites.", e);
             }
+            NAMED_GROUPS = namedGroups;
             AVAILABLE_OPENSSL_CIPHER_SUITES = Collections.unmodifiableSet(availableOpenSslCipherSuites);
             final Set<String> availableJavaCipherSuites = new LinkedHashSet<String>(
                     AVAILABLE_OPENSSL_CIPHER_SUITES.size() * 2);
@@ -331,6 +386,8 @@ public final class OpenSsl {
 
             addIfSupported(availableJavaCipherSuites, defaultCiphers, DEFAULT_CIPHER_SUITES);
             addIfSupported(availableJavaCipherSuites, defaultCiphers, TLSV13_CIPHER_SUITES);
+            // Also handle the extra supported ciphers as these will contain some more stuff on BoringSSL.
+            addIfSupported(availableJavaCipherSuites, defaultCiphers, EXTRA_SUPPORTED_TLS_1_3_CIPHERS);
 
             useFallbackCiphersIfDefaultIsEmpty(defaultCiphers, availableJavaCipherSuites);
             DEFAULT_CIPHERS = Collections.unmodifiableList(defaultCiphers);
@@ -365,7 +422,7 @@ public final class OpenSsl {
                 protocols.add(SslProtocols.TLS_v1_2);
             }
 
-            // This is only supported by java11 and later.
+            // This is only supported by java8u272 and later.
             if (tlsv13Supported && doesSupportProtocol(SSL.SSL_PROTOCOL_TLSV1_3, SSL.SSL_OP_NO_TLSv1_3)) {
                 protocols.add(SslProtocols.TLS_v1_3);
                 TLSV13_SUPPORTED = true;
@@ -393,6 +450,7 @@ public final class OpenSsl {
             IS_BORINGSSL = false;
             EXTRA_SUPPORTED_TLS_1_3_CIPHERS = EmptyArrays.EMPTY_STRINGS;
             EXTRA_SUPPORTED_TLS_1_3_CIPHERS_STRING = StringUtil.EMPTY_STRING;
+            NAMED_GROUPS = DEFAULT_NAMED_GROUPS;
         }
     }
 

@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.netty</groupId>
     <artifactId>netty-parent</artifactId>
-    <version>4.1.67.Final-SNAPSHOT</version>
+    <version>4.1.73.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>netty-testsuite-native-image-client-runtime-init</artifactId>
@@ -29,7 +29,7 @@
   <name>Netty/Testsuite/NativeImage/ClientRuntimeInit</name>
 
   <properties>
-    <skipJapicmp>true</skipJapicmp>
+    <japicmp.skip>true</japicmp.skip>
     <!-- Do not deploy this module -->
     <skipDeploy>true</skipDeploy>
   </properties>

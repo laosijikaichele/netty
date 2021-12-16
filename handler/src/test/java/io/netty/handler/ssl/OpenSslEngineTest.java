@@ -1103,7 +1103,6 @@ public class OpenSslEngineTest extends SSLEngineTest {
             SSLParameters parameters = new SSLParameters();
             Java8SslTestUtils.setSNIMatcher(parameters, name);
             engine.setSSLParameters(parameters);
-            assertTrue(unwrapEngine(engine).checkSniHostnameMatch(name));
             assertFalse(unwrapEngine(engine).checkSniHostnameMatch("other".getBytes(CharsetUtil.UTF_8)));
         } finally {
             cleanupServerSslEngine(engine);
@@ -1397,12 +1396,16 @@ public class OpenSslEngineTest extends SSLEngineTest {
         }
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
     public void testSessionLocalWhenNonMutualWithKeyManager(SSLEngineTestParam param) throws Exception {
         checkShouldUseKeyManagerFactory();
         super.testSessionLocalWhenNonMutualWithKeyManager(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
     public void testSessionLocalWhenNonMutualWithoutKeyManager(SSLEngineTestParam param) throws Exception {
         // This only really works when the KeyManagerFactory is supported as otherwise we not really know when
@@ -1517,6 +1520,8 @@ public class OpenSslEngineTest extends SSLEngineTest {
         return context;
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
     public void testSessionCache(SSLEngineTestParam param) throws Exception {
         assumeTrue(OpenSsl.isSessionCacheSupported());
@@ -1525,12 +1530,16 @@ public class OpenSslEngineTest extends SSLEngineTest {
         assertSessionContext(serverSslCtx);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
     public void testSessionCacheTimeout(SSLEngineTestParam param) throws Exception {
         assumeTrue(OpenSsl.isSessionCacheSupported());
         super.testSessionCacheTimeout(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
     public void testSessionCacheSize(SSLEngineTestParam param) throws Exception {
         assumeTrue(OpenSsl.isSessionCacheSupported());
@@ -1559,5 +1568,13 @@ public class OpenSslEngineTest extends SSLEngineTest {
     @Override
     protected boolean isSessionMaybeReused(SSLEngine engine) {
         return unwrapEngine(engine).isSessionReused();
+    }
+
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Override
+    public void testRSASSAPSS(SSLEngineTestParam param) throws Exception {
+        checkShouldUseKeyManagerFactory();
+        super.testRSASSAPSS(param);
     }
 }
