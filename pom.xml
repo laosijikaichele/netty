@@ -1106,7 +1106,11 @@
       <plugin>
         <groupId>com.github.siom79.japicmp</groupId>
         <artifactId>japicmp-maven-plugin</artifactId>
+<<<<<<< HEAD
         <version>0.15.4</version>
+=======
+        <version>0.15.3</version>
+>>>>>>> a1c3e3670d (Update japicmp plugin to support Java16+ (#11507))
         <configuration>
           <parameter>
             <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
