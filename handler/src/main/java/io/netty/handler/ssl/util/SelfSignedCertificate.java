@@ -31,7 +31,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -221,7 +220,7 @@ public final class SelfSignedCertificate {
     public SelfSignedCertificate(String fqdn, SecureRandom random, int bits, Date notBefore, Date notAfter,
                                  String algorithm) throws CertificateException {
 
-        if (!algorithm.equalsIgnoreCase("EC") && !algorithm.equalsIgnoreCase("RSA")) {
+        if (!"EC".equalsIgnoreCase(algorithm) && !"RSA".equalsIgnoreCase(algorithm)) {
             throw new IllegalArgumentException("Algorithm not valid: " + algorithm);
         }
 
@@ -285,7 +284,7 @@ public final class SelfSignedCertificate {
     }
 
     /**
-     * Returns the generated RSA private key file in PEM format.
+     * Returns the generated EC/RSA private key file in PEM format.
      */
     public File privateKey() {
         return privateKey;
@@ -299,14 +298,14 @@ public final class SelfSignedCertificate {
     }
 
     /**
-     * Returns the generated RSA private key.
+     * Returns the generated EC/RSA private key.
      */
     public PrivateKey key() {
         return key;
     }
 
     /**
-     * Deletes the generated X.509 certificate file and RSA private key file.
+     * Deletes the generated X.509 certificate file and EC/RSA private key file.
      */
     public void delete() {
         safeDelete(certificate);

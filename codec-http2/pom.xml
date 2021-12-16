@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.netty</groupId>
     <artifactId>netty-parent</artifactId>
-    <version>4.1.67.Final-SNAPSHOT</version>
+    <version>4.1.73.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>netty-codec-http2</artifactId>
@@ -93,6 +93,11 @@
     <dependency>
       <groupId>com.aayushatharva.brotli4j</groupId>
       <artifactId>brotli4j</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>com.github.luben</groupId>
+      <artifactId>zstd-jni</artifactId>
       <optional>true</optional>
     </dependency>
   </dependencies>

@@ -27,7 +27,6 @@ import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.netty.channel.unix.Errors.ERRNO_EAGAIN_NEGATIVE;
 import static io.netty.channel.unix.Errors.ERRNO_EINPROGRESS_NEGATIVE;
@@ -45,6 +44,8 @@ import static io.netty.channel.unix.NativeInetAddress.ipv4MappedIpv6Address;
  */
 public class Socket extends FileDescriptor {
 
+    private static volatile boolean isIpv6Preferred;
+
     @Deprecated
     public static final int UDS_SUN_PATH_SIZE = 100;
 
@@ -52,14 +53,21 @@ public class Socket extends FileDescriptor {
 
     public Socket(int fd) {
         super(fd);
-        this.ipv6 = isIPv6(fd);
+        ipv6 = isIPv6(fd);
     }
-
     /**
      * Returns {@code true} if we should use IPv6 internally, {@code false} otherwise.
      */
     private boolean useIpv6(InetAddress address) {
-        return ipv6 || address instanceof Inet6Address;
+        return useIpv6(this, address);
+    }
+
+    /**
+     * Returns {@code true} if the given socket and address combination should use IPv6 internally,
+     * {@code false} otherwise.
+     */
+    protected static boolean useIpv6(Socket socket, InetAddress address) {
+        return socket.ipv6 || address instanceof Inet6Address;
     }
 
     public final void shutdown() throws IOException {
@@ -72,7 +80,7 @@ public class Socket extends FileDescriptor {
             // shutdown anything. This is because if the underlying FD is reused and we still have an object which
             // represents the previous incarnation of the FD we need to be sure we don't inadvertently shutdown the
             // "new" FD without explicitly having a change.
-            final int oldState = this.state;
+            final int oldState = state;
             if (isClosed(oldState)) {
                 throw new ClosedChannelException();
             }
@@ -450,7 +458,11 @@ public class Socket extends FileDescriptor {
         setTrafficClass(fd, ipv6, trafficClass);
     }
 
-    public static native boolean isIPv6Preferred();
+    public static boolean isIPv6Preferred() {
+        return isIpv6Preferred;
+    }
+
+    private static native boolean isIPv6Preferred0(boolean ipv4Preferred);
 
     private static native boolean isIPv6(int fd);
 
@@ -460,8 +472,6 @@ public class Socket extends FileDescriptor {
                 "fd=" + fd +
                 '}';
     }
-
-    private static final AtomicBoolean INITIALIZED = new AtomicBoolean();
 
     public static Socket newSocketStream() {
         return new Socket(newSocketStream0());
@@ -480,9 +490,7 @@ public class Socket extends FileDescriptor {
     }
 
     public static void initialize() {
-        if (INITIALIZED.compareAndSet(false, true)) {
-            initialize(NetUtil.isIpV4StackPreferred());
-        }
+        isIpv6Preferred = isIPv6Preferred0(NetUtil.isIpV4StackPreferred());
     }
 
     protected static int newSocketStream0() {
@@ -591,5 +599,4 @@ public class Socket extends FileDescriptor {
     private static native void setSoLinger(int fd, int soLinger) throws IOException;
     private static native void setBroadcast(int fd, int broadcast) throws IOException;
     private static native void setTrafficClass(int fd, boolean ipv6, int trafficClass) throws IOException;
-    private static native void initialize(boolean ipv4Preferred);
 }

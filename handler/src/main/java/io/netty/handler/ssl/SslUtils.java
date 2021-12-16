@@ -33,7 +33,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -120,7 +119,7 @@ final class SslUtils {
             DEFAULT_TLSV13_CIPHER_SUITES = EmptyArrays.EMPTY_STRINGS;
         }
 
-        List<String> defaultCiphers = new ArrayList<String>();
+        Set<String> defaultCiphers = new LinkedHashSet<String>();
         // GCM (Galois/Counter Mode) requires JDK 8.
         defaultCiphers.add("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384");
         defaultCiphers.add("TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256");
@@ -328,15 +327,21 @@ final class SslUtils {
     // Reads a big-endian unsigned short integer from the buffer
     @SuppressWarnings("deprecation")
     private static int unsignedShortBE(ByteBuf buffer, int offset) {
-        return buffer.order() == ByteOrder.BIG_ENDIAN ?
-                buffer.getUnsignedShort(offset) : buffer.getUnsignedShortLE(offset);
+        int value = buffer.getUnsignedShort(offset);
+        if (buffer.order() == ByteOrder.LITTLE_ENDIAN) {
+            value = Integer.reverseBytes(value) >>> Short.SIZE;
+        }
+        return value;
     }
 
     // Reads a big-endian short integer from the buffer
     @SuppressWarnings("deprecation")
     private static short shortBE(ByteBuf buffer, int offset) {
-        return buffer.order() == ByteOrder.BIG_ENDIAN ?
-                buffer.getShort(offset) : buffer.getShortLE(offset);
+        short value = buffer.getShort(offset);
+        if (buffer.order() == ByteOrder.LITTLE_ENDIAN) {
+            value = Short.reverseBytes(value);
+        }
+        return value;
     }
 
     private static short unsignedByte(byte b) {
@@ -475,7 +480,7 @@ final class SslUtils {
     static boolean isValidHostNameForSNI(String hostname) {
         return hostname != null &&
                hostname.indexOf('.') > 0 &&
-               !hostname.endsWith(".") &&
+               !hostname.endsWith(".") && !hostname.startsWith("/") &&
                !NetUtil.isValidIpV4Address(hostname) &&
                !NetUtil.isValidIpV6Address(hostname);
     }
@@ -486,10 +491,6 @@ final class SslUtils {
     static boolean isTLSv13Cipher(String cipher) {
         // See https://tools.ietf.org/html/rfc8446#appendix-B.4
         return TLSV13_CIPHERS.contains(cipher);
-    }
-
-    static boolean isEmpty(Object[] arr) {
-        return arr == null || arr.length == 0;
     }
 
     private SslUtils() {

@@ -342,8 +342,17 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
                 // Use SNI if peerHost was specified and a valid hostname
                 // See https://github.com/netty/netty/issues/4746
                 if (clientMode && SslUtils.isValidHostNameForSNI(peerHost)) {
-                    SSL.setTlsExtHostName(ssl, peerHost);
-                    sniHostNames = Collections.singletonList(peerHost);
+                    // If on java8 and later we should do some extra validation to ensure we can construct the
+                    // SNIHostName later again.
+                    if (PlatformDependent.javaVersion() >= 8) {
+                        if (Java8SslUtils.isValidHostNameForSNI(peerHost)) {
+                            SSL.setTlsExtHostName(ssl, peerHost);
+                            sniHostNames = Collections.singletonList(peerHost);
+                        }
+                    } else {
+                        SSL.setTlsExtHostName(ssl, peerHost);
+                        sniHostNames = Collections.singletonList(peerHost);
+                    }
                 }
 
                 if (enableOcsp) {
@@ -370,6 +379,13 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
                     }
                 }
 
+                if (OpenSsl.isBoringSSL() && clientMode) {
+                    // If in client-mode and BoringSSL let's allow to renegotiate once as the server may use this
+                    // for client auth.
+                    //
+                    // See https://github.com/netty/netty/issues/11529
+                    SSL.setRenegotiateMode(ssl, SSL.SSL_RENEGOTIATE_ONCE);
+                }
                 // setMode may impact the overhead.
                 calculateMaxWrapOverhead();
             } catch (Throwable cause) {
@@ -1359,7 +1375,9 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
         // As rejectRemoteInitiatedRenegotiation() is called in a finally block we also need to check if we shutdown
         // the engine before as otherwise SSL.getHandshakeCount(ssl) will throw an NPE if the passed in ssl is 0.
         // See https://github.com/netty/netty/issues/7353
-        if (!isDestroyed() && SSL.getHandshakeCount(ssl) > 1 &&
+        if (!isDestroyed() && (!clientMode && SSL.getHandshakeCount(ssl) > 1 ||
+                // Let's allow to renegotiate once for client auth.
+                clientMode && SSL.getHandshakeCount(ssl) > 2) &&
             // As we may count multiple handshakes when TLSv1.3 is used we should just ignore this here as
             // renegotiation is not supported in TLSv1.3 as per spec.
             !SslProtocols.TLS_v1_3.equals(session.getProtocol()) && handshakeState == HandshakeState.FINISHED) {
@@ -1442,12 +1460,9 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
                 // The engine was destroyed in the meantime, just return.
                 return;
             }
-            try {
-                task.run();
-            } finally {
-                // The task was run, reset needTask to false so getHandshakeStatus() returns the correct value.
-                needTask = false;
-            }
+            // The task was run, reset needTask to false so getHandshakeStatus() returns the correct value.
+            needTask = false;
+            task.run();
         }
     }
 
@@ -1457,18 +1472,22 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
         }
 
         @Override
-        public void run(Runnable runnable) {
+        public void run(final Runnable runnable) {
             if (isDestroyed()) {
                 // The engine was destroyed in the meantime, just return.
                 runnable.run();
                 return;
             }
-            try {
-                task.runAsync(runnable);
-            } finally {
-                // The task was run, reset needTask to false so getHandshakeStatus() returns the correct value.
-                needTask = false;
-            }
+            task.runAsync(new Runnable() {
+                @Override
+                public void run() {
+                    // The task was run, reset needTask to false so getHandshakeStatus() returns the correct value.
+                    // This needs to be done before we run the completion runnable, since that might
+                    // query the handshake status.
+                    needTask = false;
+                    runnable.run();
+                }
+            });
         }
     }
 
@@ -1972,10 +1991,16 @@ public class ReferenceCountedOpenSslEngine extends SSLEngine implements Referenc
 
     private SSLEngineResult.HandshakeStatus mayFinishHandshake(SSLEngineResult.HandshakeStatus status)
             throws SSLException {
-        if (status == NOT_HANDSHAKING && handshakeState != HandshakeState.FINISHED) {
-            // If the status was NOT_HANDSHAKING and we not finished the handshake we need to call
-            // SSL_do_handshake() again
-            return handshake();
+        if (status == NOT_HANDSHAKING) {
+            if (handshakeState != HandshakeState.FINISHED) {
+                // If the status was NOT_HANDSHAKING and we not finished the handshake we need to call
+                // SSL_do_handshake() again
+                return handshake();
+            }
+            if (!isDestroyed() && SSL.bioLengthNonApplication(networkBIO) > 0) {
+                // We have something left that needs to be wrapped.
+                return NEED_WRAP;
+            }
         }
         return status;
     }

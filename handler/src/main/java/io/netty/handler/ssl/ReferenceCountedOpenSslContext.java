@@ -47,8 +47,9 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.CertificateRevokedException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -68,7 +69,6 @@ import javax.net.ssl.X509TrustManager;
 
 import static io.netty.handler.ssl.OpenSsl.DEFAULT_CIPHERS;
 import static io.netty.handler.ssl.OpenSsl.availableJavaCipherSuites;
-import static io.netty.handler.ssl.OpenSsl.ensureAvailability;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
 import static io.netty.util.internal.ObjectUtil.checkNonEmpty;
 import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
@@ -117,6 +117,7 @@ public abstract class ReferenceCountedOpenSslContext extends SslContext implemen
     // https://mail.openjdk.java.net/pipermail/security-dev/2021-March/024758.html
     static final boolean CLIENT_ENABLE_SESSION_CACHE =
             SystemPropertyUtil.getBoolean("io.netty.handler.ssl.openssl.sessionCacheClient", false);
+
     /**
      * The OpenSSL SSL_CTX object.
      *
@@ -259,8 +260,12 @@ public abstract class ReferenceCountedOpenSslContext extends SslContext implemen
 
         this.keyCertChain = keyCertChain == null ? null : keyCertChain.clone();
 
-        unmodifiableCiphers = Arrays.asList(checkNotNull(cipherFilter, "cipherFilter").filterCipherSuites(
-                ciphers, DEFAULT_CIPHERS, availableJavaCipherSuites()));
+        String[] suites = checkNotNull(cipherFilter, "cipherFilter").filterCipherSuites(
+                ciphers, DEFAULT_CIPHERS, availableJavaCipherSuites());
+        // Filter out duplicates.
+        LinkedHashSet<String> suitesSet = new LinkedHashSet<String>(suites.length);
+        Collections.addAll(suitesSet, suites);
+        unmodifiableCiphers = new ArrayList<String>(suitesSet);
 
         this.apn = checkNotNull(apn, "apn");
 
@@ -380,6 +385,8 @@ public abstract class ReferenceCountedOpenSslContext extends SslContext implemen
             if (asyncPrivateKeyMethod != null) {
                 SSLContext.setPrivateKeyMethod(ctx, new AsyncPrivateKeyMethod(engineMap, asyncPrivateKeyMethod));
             }
+            // Set the curves.
+            SSLContext.setCurvesList(ctx, OpenSsl.NAMED_GROUPS);
             success = true;
         } finally {
             if (!success) {

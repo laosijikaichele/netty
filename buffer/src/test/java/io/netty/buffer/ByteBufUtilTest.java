@@ -141,6 +141,12 @@ public class ByteBufUtilTest {
         assertEquals(1, ByteBufUtil.indexOf(needle, haystack));
         haystack.release();
 
+        haystack = new WrappedByteBuf(Unpooled.copiedBuffer("abc123", CharsetUtil.UTF_8));
+        assertEquals(0, ByteBufUtil.indexOf(Unpooled.copiedBuffer("a", CharsetUtil.UTF_8), haystack));
+        assertEquals(1, ByteBufUtil.indexOf(Unpooled.copiedBuffer("bc".getBytes(CharsetUtil.UTF_8)), haystack));
+        assertEquals(-1, ByteBufUtil.indexOf(Unpooled.copiedBuffer("abcdef".getBytes(CharsetUtil.UTF_8)), haystack));
+        haystack.release();
+
         haystack = Unpooled.copiedBuffer("123aab123", CharsetUtil.UTF_8);
         assertEquals(3, ByteBufUtil.indexOf(Unpooled.copiedBuffer("aab", CharsetUtil.UTF_8), haystack));
         haystack.release();
@@ -667,7 +673,7 @@ public class ByteBufUtilTest {
                 ByteBufUtil.utf8Bytes(usAscii, 5, 18));
     }
 
-    private static int[][] INVALID_RANGES = new int[][] {
+    private static final int[][] INVALID_RANGES = new int[][] {
         { -1, 5 }, { 5, 30 }, { 10, 5 }
     };
 
