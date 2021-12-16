@@ -20,14 +20,17 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.FileRegion;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.util.CharsetUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.channels.WritableByteChannel;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HttpResponseEncoderTest {
     private static final long INTEGER_OVERFLOW = (long) Integer.MAX_VALUE + 1;
@@ -283,14 +286,14 @@ public class HttpResponseEncoderTest {
 
         ByteBuf buffer = channel.readOutbound();
         StringBuilder responseText = new StringBuilder();
-        responseText.append(HttpVersion.HTTP_1_1.toString()).append(' ').append(status.toString()).append("\r\n");
+        responseText.append(HttpVersion.HTTP_1_1).append(' ').append(status.toString()).append("\r\n");
         if (!headerStripped && headerName != null) {
             responseText.append(headerName).append(": ");
 
             if (HttpHeaderNames.CONTENT_LENGTH.contentEquals(headerName)) {
                 responseText.append('0');
             } else {
-                responseText.append(HttpHeaderValues.CHUNKED.toString());
+                responseText.append(HttpHeaderValues.CHUNKED);
             }
             responseText.append("\r\n");
         }
@@ -380,8 +383,8 @@ public class HttpResponseEncoderTest {
         assertTrue(channel.writeOutbound(LastHttpContent.EMPTY_LAST_CONTENT));
 
         StringBuilder responseText = new StringBuilder();
-        responseText.append(HttpVersion.HTTP_1_1.toString()).append(' ')
-                .append(HttpResponseStatus.RESET_CONTENT.toString()).append("\r\n");
+        responseText.append(HttpVersion.HTTP_1_1).append(' ')
+                .append(HttpResponseStatus.RESET_CONTENT).append("\r\n");
         responseText.append(HttpHeaderNames.CONTENT_LENGTH).append(": 0\r\n");
         responseText.append("\r\n");
 

@@ -35,13 +35,13 @@ import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.GenericFutureListener;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static io.netty.buffer.Unpooled.copiedBuffer;
 import static io.netty.handler.codec.http2.Http2CodecUtil.connectionPrefaceBuf;
@@ -63,10 +62,10 @@ import static io.netty.handler.codec.http2.Http2TestUtil.newVoidPromise;
 import static io.netty.util.CharsetUtil.US_ASCII;
 import static io.netty.util.CharsetUtil.UTF_8;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
@@ -143,7 +142,7 @@ public class Http2ConnectionHandlerTest {
     private String goAwayDebugCap;
 
     @SuppressWarnings("unchecked")
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
 
@@ -211,7 +210,7 @@ public class Http2ConnectionHandlerTest {
         when(ctx.voidPromise()).thenReturn(voidPromise);
         when(ctx.write(any())).thenReturn(future);
         when(ctx.executor()).thenReturn(executor);
-        doAnswer(new Answer() {
+        doAnswer(new Answer<Object>() {
             @Override
             public Object answer(InvocationOnMock in) throws Throwable {
                 Object msg = in.getArgument(0);
@@ -227,7 +226,7 @@ public class Http2ConnectionHandlerTest {
         return handler;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         if (handler != null) {
             handler.handlerRemoved(ctx);
@@ -237,23 +236,25 @@ public class Http2ConnectionHandlerTest {
     @Test
     public void onHttpServerUpgradeWithoutHandlerAdded() throws Exception {
         handler = new Http2ConnectionHandlerBuilder().frameListener(new Http2FrameAdapter()).server(true).build();
-        try {
-            handler.onHttpServerUpgrade(new Http2Settings());
-            fail();
-        } catch (Http2Exception e) {
-            assertEquals(Http2Error.INTERNAL_ERROR, e.error());
-        }
+        Http2Exception e = assertThrows(Http2Exception.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                handler.onHttpServerUpgrade(new Http2Settings());
+            }
+        });
+        assertEquals(Http2Error.INTERNAL_ERROR, e.error());
     }
 
     @Test
     public void onHttpClientUpgradeWithoutHandlerAdded() throws Exception {
         handler = new Http2ConnectionHandlerBuilder().frameListener(new Http2FrameAdapter()).server(false).build();
-        try {
-            handler.onHttpClientUpgrade();
-            fail();
-        } catch (Http2Exception e) {
-            assertEquals(Http2Error.INTERNAL_ERROR, e.error());
-        }
+        Http2Exception e = assertThrows(Http2Exception.class, new Executable() {
+            @Override
+            public void execute() throws Throwable {
+                handler.onHttpClientUpgrade();
+            }
+        });
+        assertEquals(Http2Error.INTERNAL_ERROR, e.error());
     }
 
     @Test
@@ -267,10 +268,10 @@ public class Http2ConnectionHandlerTest {
                 Http2ConnectionPrefaceAndSettingsFrameWrittenEvent.INSTANCE;
 
         final AtomicBoolean verified = new AtomicBoolean(false);
-        final Answer verifier = new Answer() {
+        final Answer<Object> verifier = new Answer<Object>() {
             @Override
             public Object answer(final InvocationOnMock in) throws Throwable {
-                assertTrue(in.getArgument(0).equals(evt));  // sanity check...
+                assertEquals(in.getArgument(0), evt);  // sanity check...
                 verify(ctx).write(eq(connectionPrefaceBuf()));
                 verify(encoder).writeSettings(eq(ctx), any(Http2Settings.class), any(ChannelPromise.class));
                 verified.set(true);
@@ -513,7 +514,7 @@ public class Http2ConnectionHandlerTest {
         when(stream.isHeadersSent()).thenReturn(false);
         when(remote.lastStreamCreated()).thenReturn(STREAM_ID);
         when(frameWriter.writeRstStream(eq(ctx), eq(STREAM_ID),
-            eq(Http2Error.PROTOCOL_ERROR.code()), eq(promise))).thenReturn(future);
+            eq(PROTOCOL_ERROR.code()), eq(promise))).thenReturn(future);
         handler.exceptionCaught(ctx, e);
 
         verify(remote).createStream(STREAM_ID, true);

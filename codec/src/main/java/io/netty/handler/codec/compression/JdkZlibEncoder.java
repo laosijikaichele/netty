@@ -20,8 +20,8 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.ChannelPromiseNotifier;
 import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.internal.ObjectUtil;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.SuppressJava6Requirement;
@@ -166,7 +166,7 @@ public class JdkZlibEncoder extends ZlibEncoder {
                 @Override
                 public void run() {
                     ChannelFuture f = finishEncode(ctx(), p);
-                    f.addListener(new ChannelPromiseNotifier(promise));
+                    PromiseNotifier.cascade(f, promise);
                 }
             });
             return p;
@@ -200,41 +200,49 @@ public class JdkZlibEncoder extends ZlibEncoder {
 
         int offset;
         byte[] inAry;
-        if (uncompressed.hasArray()) {
-            // if it is backed by an array we not need to to do a copy at all
-            inAry = uncompressed.array();
-            offset = uncompressed.arrayOffset() + uncompressed.readerIndex();
-            // skip all bytes as we will consume all of them
-            uncompressed.skipBytes(len);
-        } else {
-            inAry = new byte[len];
-            uncompressed.readBytes(inAry);
-            offset = 0;
-        }
-
-        if (writeHeader) {
-            writeHeader = false;
-            if (wrapper == ZlibWrapper.GZIP) {
-                out.writeBytes(gzipHeader);
-            }
-        }
-
-        if (wrapper == ZlibWrapper.GZIP) {
-            crc.update(inAry, offset, len);
-        }
-
-        deflater.setInput(inAry, offset, len);
-        for (;;) {
-            deflate(out);
-            if (deflater.needsInput()) {
-                // Consumed everything
-                break;
+        ByteBuf heapBuf = null;
+        try {
+            if (uncompressed.hasArray()) {
+                // if it is backed by an array we not need to do a copy at all
+                inAry = uncompressed.array();
+                offset = uncompressed.arrayOffset() + uncompressed.readerIndex();
+                // skip all bytes as we will consume all of them
+                uncompressed.skipBytes(len);
             } else {
-                if (!out.isWritable()) {
-                    // We did not consume everything but the buffer is not writable anymore. Increase the capacity to
-                    // make more room.
-                    out.ensureWritable(out.writerIndex());
+                heapBuf = ctx.alloc().heapBuffer(len, len);
+                uncompressed.readBytes(heapBuf, len);
+                inAry = heapBuf.array();
+                offset = heapBuf.arrayOffset() + heapBuf.readerIndex();
+            }
+
+            if (writeHeader) {
+                writeHeader = false;
+                if (wrapper == ZlibWrapper.GZIP) {
+                    out.writeBytes(gzipHeader);
                 }
+            }
+
+            if (wrapper == ZlibWrapper.GZIP) {
+                crc.update(inAry, offset, len);
+            }
+
+            deflater.setInput(inAry, offset, len);
+            for (;;) {
+                deflate(out);
+                if (deflater.needsInput()) {
+                    // Consumed everything
+                    break;
+                } else {
+                    if (!out.isWritable()) {
+                        // We did not consume everything but the buffer is not writable anymore. Increase the capacity
+                        // to make more room.
+                        out.ensureWritable(out.writerIndex());
+                    }
+                }
+            }
+        } finally {
+            if (heapBuf != null) {
+                heapBuf.release();
             }
         }
     }

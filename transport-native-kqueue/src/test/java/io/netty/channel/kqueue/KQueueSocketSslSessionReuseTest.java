@@ -17,18 +17,12 @@ package io.netty.channel.kqueue;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.handler.ssl.SslContext;
 import io.netty.testsuite.transport.TestsuitePermutation;
 import io.netty.testsuite.transport.socket.SocketSslSessionReuseTest;
 
 import java.util.List;
 
 public class KQueueSocketSslSessionReuseTest extends SocketSslSessionReuseTest {
-
-    public KQueueSocketSslSessionReuseTest(SslContext serverCtx, SslContext clientCtx) {
-        super(serverCtx, clientCtx);
-    }
-
     @Override
     protected List<TestsuitePermutation.BootstrapComboFactory<ServerBootstrap, Bootstrap>> newFactories() {
         return KQueueSocketTestPermutation.INSTANCE.socket();

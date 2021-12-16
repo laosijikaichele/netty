@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.netty</groupId>
     <artifactId>netty-parent</artifactId>
-    <version>4.1.65.Final-SNAPSHOT</version>
+    <version>4.1.73.Final-SNAPSHOT</version>
   </parent>
 
   <artifactId>netty-microbench</artifactId>
@@ -31,14 +31,14 @@
   <properties>
     <!-- Skip tests by default; run only if -DskipTests=false is specified -->
     <skipTests>true</skipTests>
-    <jmh.version>1.22</jmh.version>
+    <jmh.version>1.33</jmh.version>
     <!-- This only be set when run on linux as on other platforms we just want to include the jar without native
          code -->
     <epoll.classifier />
     <!-- This only be set when run on mac as on other platforms we just want to include the jar without native
          code -->
     <kqueue.classifier />
-    <skipJapicmp>true</skipJapicmp>
+    <japicmp.skip>true</japicmp.skip>
   </properties>
   <profiles>
     <profile>

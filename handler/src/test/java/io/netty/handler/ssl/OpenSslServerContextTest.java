@@ -13,20 +13,16 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
-
 package io.netty.handler.ssl;
 
-import org.junit.Assume;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import javax.net.ssl.SSLException;
 import java.io.File;
 
-import static org.junit.Assume.assumeTrue;
-
 public class OpenSslServerContextTest extends SslContextTest {
 
-    @BeforeClass
+    @BeforeAll
     public static void checkOpenSsl() {
         OpenSsl.ensureAvailability();
     }

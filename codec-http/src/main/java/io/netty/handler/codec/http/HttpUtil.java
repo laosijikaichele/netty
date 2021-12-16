@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import io.netty.handler.codec.Headers;
 import io.netty.util.AsciiString;
 import io.netty.util.CharsetUtil;
 import io.netty.util.NetUtil;
@@ -395,10 +394,15 @@ public final class HttpUtil {
      */
     public static Charset getCharset(CharSequence contentTypeValue, Charset defaultCharset) {
         if (contentTypeValue != null) {
-            CharSequence charsetCharSequence = getCharsetAsSequence(contentTypeValue);
-            if (charsetCharSequence != null) {
+            CharSequence charsetRaw = getCharsetAsSequence(contentTypeValue);
+            if (charsetRaw != null) {
+                if (charsetRaw.length() > 2) { // at least contains 2 quotes(")
+                    if (charsetRaw.charAt(0) == '"' && charsetRaw.charAt(charsetRaw.length() - 1) == '"') {
+                        charsetRaw = charsetRaw.subSequence(1, charsetRaw.length() - 1);
+                    }
+                }
                 try {
-                    return Charset.forName(charsetCharSequence.toString());
+                    return Charset.forName(charsetRaw.toString());
                 } catch (IllegalCharsetNameException ignored) {
                     // just return the default charset
                 } catch (UnsupportedCharsetException ignored) {
@@ -598,7 +602,7 @@ public final class HttpUtil {
         }
         // Ensure we not allow sign as part of the content-length:
         // See https://github.com/squid-cache/squid/security/advisories/GHSA-qf3v-rc95-96j5
-        if (!Character.isDigit(firstField.charAt(0))) {
+        if (firstField.isEmpty() || !Character.isDigit(firstField.charAt(0))) {
             // Reject the message as invalid
             throw new IllegalArgumentException(
                     "Content-Length value is not a number: " + firstField);

@@ -28,9 +28,9 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.util.concurrent.ImmediateEventExecutor;
 import io.netty.util.concurrent.Promise;
-import io.netty.util.internal.StringUtil;
-import org.junit.AssumptionViolatedException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.Timeout;
 
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
@@ -38,21 +38,28 @@ import java.net.SocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 import static io.netty.buffer.ByteBufUtil.writeAscii;
 import static io.netty.buffer.UnpooledByteBufAllocator.DEFAULT;
 import static io.netty.util.CharsetUtil.US_ASCII;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SocketConnectTest extends AbstractSocketTest {
 
-    @Test(timeout = 30000)
-    public void testLocalAddressAfterConnect() throws Throwable {
-        run();
+    @Test
+    @Timeout(value = 30000, unit = TimeUnit.MILLISECONDS)
+    public void testLocalAddressAfterConnect(TestInfo testInfo) throws Throwable {
+        run(testInfo, new Runner<ServerBootstrap, Bootstrap>() {
+            @Override
+            public void run(ServerBootstrap serverBootstrap, Bootstrap bootstrap) throws Throwable {
+                testLocalAddressAfterConnect(serverBootstrap, bootstrap);
+            }
+        });
     }
 
     public void testLocalAddressAfterConnect(ServerBootstrap sb, Bootstrap cb) throws Throwable {
@@ -87,9 +94,15 @@ public class SocketConnectTest extends AbstractSocketTest {
         }
     }
 
-    @Test(timeout = 3000)
-    public void testChannelEventsFiredWhenClosedDirectly() throws Throwable {
-        run();
+    @Test
+    @Timeout(value = 3000, unit = TimeUnit.MILLISECONDS)
+    public void testChannelEventsFiredWhenClosedDirectly(TestInfo testInfo) throws Throwable {
+        run(testInfo, new Runner<ServerBootstrap, Bootstrap>() {
+            @Override
+            public void run(ServerBootstrap serverBootstrap, Bootstrap bootstrap) throws Throwable {
+                testChannelEventsFiredWhenClosedDirectly(serverBootstrap, bootstrap);
+            }
+        });
     }
 
     public void testChannelEventsFiredWhenClosedDirectly(ServerBootstrap sb, Bootstrap cb) throws Throwable {
@@ -127,9 +140,15 @@ public class SocketConnectTest extends AbstractSocketTest {
         }
     }
 
-    @Test(timeout = 3000)
-    public void testWriteWithFastOpenBeforeConnect() throws Throwable {
-        run();
+    @Test
+    @Timeout(value = 3000, unit = TimeUnit.MILLISECONDS)
+    public void testWriteWithFastOpenBeforeConnect(TestInfo testInfo) throws Throwable {
+        run(testInfo, new Runner<ServerBootstrap, Bootstrap>() {
+            @Override
+            public void run(ServerBootstrap serverBootstrap, Bootstrap bootstrap) throws Throwable {
+                testWriteWithFastOpenBeforeConnect(serverBootstrap, bootstrap);
+            }
+        });
     }
 
     public void testWriteWithFastOpenBeforeConnect(ServerBootstrap sb, Bootstrap cb) throws Throwable {
@@ -168,8 +187,9 @@ public class SocketConnectTest extends AbstractSocketTest {
     }
 
     protected void enableTcpFastOpen(ServerBootstrap sb, Bootstrap cb) {
-        throw new AssumptionViolatedException(
-                "Support for testing TCP_FASTOPEN not enabled for " + StringUtil.simpleClassName(this));
+        // TFO is an almost-pure optimisation and should not change any observable behaviour in our tests.
+        sb.option(ChannelOption.TCP_FASTOPEN, 5);
+        cb.option(ChannelOption.TCP_FASTOPEN_CONNECT, true);
     }
 
     private static void assertLocalAddress(InetSocketAddress address) {

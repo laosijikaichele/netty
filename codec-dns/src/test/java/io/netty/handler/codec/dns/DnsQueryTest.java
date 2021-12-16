@@ -19,8 +19,7 @@ import io.netty.channel.embedded.EmbeddedChannel;
 
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.util.internal.SocketUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -28,13 +27,19 @@ import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DnsQueryTest {
 
     @Test
-    public void writeQueryTest() throws Exception {
+    public void testEncodeAndDecodeQuery() {
         InetSocketAddress addr = SocketUtils.socketAddress("8.8.8.8", 53);
-        EmbeddedChannel embedder = new EmbeddedChannel(new DatagramDnsQueryEncoder());
+        EmbeddedChannel writeChannel = new EmbeddedChannel(new DatagramDnsQueryEncoder());
+        EmbeddedChannel readChannel = new EmbeddedChannel(new DatagramDnsQueryDecoder());
+
         List<DnsQuery> queries = new ArrayList<DnsQuery>(5);
         queries.add(new DatagramDnsQuery(null, addr, 1).setRecord(
                 DnsSection.QUESTION,
@@ -58,12 +63,21 @@ public class DnsQueryTest {
             assertThat(query.count(DnsSection.AUTHORITY), is(0));
             assertThat(query.count(DnsSection.ADDITIONAL), is(0));
 
-            embedder.writeOutbound(query);
+            assertTrue(writeChannel.writeOutbound(query));
 
-            DatagramPacket packet = embedder.readOutbound();
-            Assert.assertTrue(packet.content().isReadable());
-            packet.release();
-            Assert.assertNull(embedder.readOutbound());
+            DatagramPacket packet = writeChannel.readOutbound();
+            assertTrue(packet.content().isReadable());
+            assertTrue(readChannel.writeInbound(packet));
+
+            DnsQuery decodedDnsQuery = readChannel.readInbound();
+            assertEquals(query, decodedDnsQuery);
+            assertTrue(decodedDnsQuery.release());
+
+            assertNull(writeChannel.readOutbound());
+            assertNull(readChannel.readInbound());
         }
+
+        assertFalse(writeChannel.finish());
+        assertFalse(readChannel.finish());
     }
 }

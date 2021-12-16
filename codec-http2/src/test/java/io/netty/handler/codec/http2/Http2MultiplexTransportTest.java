@@ -46,10 +46,13 @@ import io.netty.util.NetUtil;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.X509TrustManager;
@@ -60,12 +63,11 @@ import java.security.cert.X509Certificate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 public class Http2MultiplexTransportTest {
     private static final ChannelHandler DISCARD_HANDLER = new ChannelInboundHandlerAdapter() {
@@ -91,12 +93,12 @@ public class Http2MultiplexTransportTest {
     private Channel serverChannel;
     private Channel serverConnectedChannel;
 
-    @Before
+    @BeforeEach
     public void setup() {
         eventLoopGroup = new NioEventLoopGroup();
     }
 
-    @After
+    @AfterEach
     public void teardown() {
         if (clientChannel != null) {
             clientChannel.close();
@@ -110,12 +112,14 @@ public class Http2MultiplexTransportTest {
         eventLoopGroup.shutdownGracefully(0, 0, MILLISECONDS);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(value = 10000, unit = MILLISECONDS)
     public void asyncSettingsAckWithMultiplexCodec() throws InterruptedException {
         asyncSettingsAck0(new Http2MultiplexCodecBuilder(true, DISCARD_HANDLER).build(), null);
     }
 
-    @Test(timeout = 10000)
+    @Test
+    @Timeout(value = 10000, unit = MILLISECONDS)
     public void asyncSettingsAckWithMultiplexHandler() throws InterruptedException {
         asyncSettingsAck0(new Http2FrameCodecBuilder(true).build(),
                 new Http2MultiplexHandler(DISCARD_HANDLER));
@@ -198,7 +202,8 @@ public class Http2MultiplexTransportTest {
         serverAckAllLatch.await();
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testFlushNotDiscarded()
             throws InterruptedException {
         final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
@@ -235,7 +240,7 @@ public class Http2MultiplexTransportTest {
                                             }
                                         });
                                     }
-                                }, 500, TimeUnit.MILLISECONDS);
+                                }, 500, MILLISECONDS);
                             }
                             ReferenceCountUtil.release(msg);
                         }
@@ -276,24 +281,28 @@ public class Http2MultiplexTransportTest {
         }
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testSSLExceptionOpenSslTLSv12() throws Exception {
         testSslException(SslProvider.OPENSSL, false);
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testSSLExceptionOpenSslTLSv13() throws Exception {
         testSslException(SslProvider.OPENSSL, true);
     }
 
-    @Ignore("JDK SSLEngine does not produce an alert")
-    @Test(timeout = 5000L)
+    @Disabled("JDK SSLEngine does not produce an alert")
+    @Test
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testSSLExceptionJDKTLSv12() throws Exception {
         testSslException(SslProvider.JDK, false);
     }
 
-    @Ignore("JDK SSLEngine does not produce an alert")
-    @Test(timeout = 5000L)
+    @Disabled("JDK SSLEngine does not produce an alert")
+    @Test
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testSSLExceptionJDKTLSv13() throws Exception {
         testSslException(SslProvider.JDK, true);
     }
@@ -446,13 +455,17 @@ public class Http2MultiplexTransportTest {
         }
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "See: https://github.com/netty/netty/issues/11542")
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testFireChannelReadAfterHandshakeSuccess_JDK() throws Exception {
         assumeTrue(SslProvider.isAlpnSupported(SslProvider.JDK));
         testFireChannelReadAfterHandshakeSuccess(SslProvider.JDK);
     }
 
-    @Test(timeout = 5000L)
+    @Test
+    @DisabledOnOs(value = OS.WINDOWS, disabledReason = "See: https://github.com/netty/netty/issues/11542")
+    @Timeout(value = 5000L, unit = MILLISECONDS)
     public void testFireChannelReadAfterHandshakeSuccess_OPENSSL() throws Exception {
         assumeTrue(OpenSsl.isAvailable());
         assumeTrue(SslProvider.isAlpnSupported(SslProvider.OPENSSL));

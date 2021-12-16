@@ -33,12 +33,10 @@ import io.netty.channel.ChannelOutboundBuffer;
 import io.netty.channel.ChannelOutboundHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.ChannelPromiseNotifier;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.UnsupportedMessageTypeException;
 import io.netty.util.ReferenceCountUtil;
-import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.DefaultPromise;
 import io.netty.util.concurrent.EventExecutor;
 import io.netty.util.concurrent.Future;
@@ -61,7 +59,6 @@ import java.nio.channels.SocketChannel;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -394,6 +391,9 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
 
     private final boolean startTls;
 
+    private final SslTasksRunner sslTaskRunnerForUnwrap = new SslTasksRunner(true);
+    private final SslTasksRunner sslTaskRunner = new SslTasksRunner(false);
+
     private SslHandlerCoalescingBufferQueue pendingUnencryptedWrites;
     private Promise<Channel> handshakePromise = new LazyChannelPromise();
     private final LazyChannelPromise sslClosePromise = new LazyChannelPromise();
@@ -672,32 +672,32 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
 
     @Override
     public void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
-        if (!pendingUnencryptedWrites.isEmpty()) {
-            // Check if queue is not empty first because create a new ChannelException is expensive
-            pendingUnencryptedWrites.releaseAndFailAll(ctx,
-                    new ChannelException("Pending write on removal of SslHandler"));
-        }
-        pendingUnencryptedWrites = null;
-
-        SSLHandshakeException cause = null;
-
-        // If the handshake is not done yet we should fail the handshake promise and notify the rest of the
-        // pipeline.
-        if (!handshakePromise.isDone()) {
-            cause = new SSLHandshakeException("SslHandler removed before handshake completed");
-            if (handshakePromise.tryFailure(cause)) {
-                ctx.fireUserEventTriggered(new SslHandshakeCompletionEvent(cause));
+        try {
+            if (!pendingUnencryptedWrites.isEmpty()) {
+                // Check if queue is not empty first because create a new ChannelException is expensive
+                pendingUnencryptedWrites.releaseAndFailAll(ctx,
+                  new ChannelException("Pending write on removal of SslHandler"));
             }
-        }
-        if (!sslClosePromise.isDone()) {
-            if (cause == null) {
+            pendingUnencryptedWrites = null;
+
+            SSLHandshakeException cause = null;
+
+            // If the handshake is not done yet we should fail the handshake promise and notify the rest of the
+            // pipeline.
+            if (!handshakePromise.isDone()) {
                 cause = new SSLHandshakeException("SslHandler removed before handshake completed");
+                if (handshakePromise.tryFailure(cause)) {
+                    ctx.fireUserEventTriggered(new SslHandshakeCompletionEvent(cause));
+                }
             }
-            notifyClosePromise(cause);
-        }
-
-        if (engine instanceof ReferenceCounted) {
-            ((ReferenceCounted) engine).release();
+            if (!sslClosePromise.isDone()) {
+                if (cause == null) {
+                    cause = new SSLHandshakeException("SslHandler removed before handshake completed");
+                }
+                notifyClosePromise(cause);
+            }
+        } finally {
+            ReferenceCountUtil.release(engine);
         }
     }
 
@@ -1258,9 +1258,12 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
                 ctx.fireUserEventTriggered(new SslHandshakeCompletionEvent(cause));
             }
 
-            // We need to flush one time as there may be an alert that we should send to the remote peer because
-            // of the SSLException reported here.
-            wrapAndFlush(ctx);
+            // Let's check if the handler was removed in the meantime and so pendingUnencryptedWrites is null.
+            if (pendingUnencryptedWrites != null) {
+                // We need to flush one time as there may be an alert that we should send to the remote peer because
+                // of the SSLException reported here.
+                wrapAndFlush(ctx);
+            }
         } catch (SSLException ex) {
             logger.debug("SSLException during trying to call SSLEngine.wrap(...)" +
                     " because of an previous SSLException, ignoring...", ex);
@@ -1387,7 +1390,8 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
                 }
 
                 if (handshakeStatus == HandshakeStatus.NEED_TASK) {
-                    if (!runDelegatedTasks(true)) {
+                    boolean pending = runDelegatedTasks(true);
+                    if (!pending) {
                         // We scheduled a task on the delegatingTaskExecutor, so stop processing as we will
                         // resume once the task completes.
                         //
@@ -1503,16 +1507,6 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         return executor instanceof EventExecutor && ((EventExecutor) executor).inEventLoop();
     }
 
-    private static void runAllDelegatedTasks(SSLEngine engine) {
-        for (;;) {
-            Runnable task = engine.getDelegatedTask();
-            if (task == null) {
-                return;
-            }
-            task.run();
-        }
-    }
-
     /**
      * Will either run the delegated task directly calling {@link Runnable#run()} and return {@code true} or will
      * offload the delegated task using {@link Executor#execute(Runnable)} and return {@code false}.
@@ -1522,22 +1516,87 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
      */
     private boolean runDelegatedTasks(boolean inUnwrap) {
         if (delegatedTaskExecutor == ImmediateExecutor.INSTANCE || inEventLoop(delegatedTaskExecutor)) {
-            // We should run the task directly in the EventExecutor thread and not offload at all.
-            runAllDelegatedTasks(engine);
-            return true;
+            // We should run the task directly in the EventExecutor thread and not offload at all. As we are on the
+            // EventLoop we can just run all tasks at once.
+            for (;;) {
+                Runnable task = engine.getDelegatedTask();
+                if (task == null) {
+                    return true;
+                }
+                setState(STATE_PROCESS_TASK);
+                if (task instanceof AsyncRunnable) {
+                    // Let's set the task to processing task before we try to execute it.
+                    boolean pending = false;
+                    try {
+                        AsyncRunnable asyncTask = (AsyncRunnable) task;
+                        AsyncTaskCompletionHandler completionHandler = new AsyncTaskCompletionHandler(inUnwrap);
+                        asyncTask.run(completionHandler);
+                        pending = completionHandler.resumeLater();
+                        if (pending) {
+                            return false;
+                        }
+                    } finally {
+                        if (!pending) {
+                            // The task has completed, lets clear the state. If it is not completed we will clear the
+                            // state once it is.
+                            clearState(STATE_PROCESS_TASK);
+                        }
+                    }
+                } else {
+                    try {
+                        task.run();
+                    } finally {
+                        clearState(STATE_PROCESS_TASK);
+                    }
+                }
+            }
         } else {
-            executeDelegatedTasks(inUnwrap);
+            executeDelegatedTask(inUnwrap);
             return false;
         }
     }
 
-    private void executeDelegatedTasks(boolean inUnwrap) {
+    private SslTasksRunner getTaskRunner(boolean inUnwrap) {
+        return inUnwrap ? sslTaskRunnerForUnwrap : sslTaskRunner;
+    }
+
+    private void executeDelegatedTask(boolean inUnwrap) {
+        executeDelegatedTask(getTaskRunner(inUnwrap));
+    }
+
+    private void executeDelegatedTask(SslTasksRunner task) {
         setState(STATE_PROCESS_TASK);
         try {
-            delegatedTaskExecutor.execute(new SslTasksRunner(inUnwrap));
+            delegatedTaskExecutor.execute(task);
         } catch (RejectedExecutionException e) {
             clearState(STATE_PROCESS_TASK);
             throw e;
+        }
+    }
+
+    private final class AsyncTaskCompletionHandler implements Runnable {
+        private final boolean inUnwrap;
+        boolean didRun;
+        boolean resumeLater;
+
+        AsyncTaskCompletionHandler(boolean inUnwrap) {
+            this.inUnwrap = inUnwrap;
+        }
+
+        @Override
+        public void run() {
+            didRun = true;
+            if (resumeLater) {
+                getTaskRunner(inUnwrap).runComplete();
+            }
+        }
+
+        boolean resumeLater() {
+            if (!didRun) {
+                resumeLater = true;
+                return true;
+            }
+            return false;
         }
     }
 
@@ -1547,6 +1606,12 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
      */
     private final class SslTasksRunner implements Runnable {
         private final boolean inUnwrap;
+        private final Runnable runCompleteTask = new Runnable() {
+            @Override
+            public void run() {
+                runComplete();
+            }
+        };
 
         SslTasksRunner(boolean inUnwrap) {
             this.inUnwrap = inUnwrap;
@@ -1612,9 +1677,10 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
             try {
                 HandshakeStatus status = engine.getHandshakeStatus();
                 switch (status) {
-                    // There is another task that needs to be executed and offloaded to the delegatingTaskExecutor.
+                    // There is another task that needs to be executed and offloaded to the delegatingTaskExecutor as
+                    // a result of this. Let's reschedule....
                     case NEED_TASK:
-                        executeDelegatedTasks(inUnwrap);
+                        executeDelegatedTask(this);
 
                         break;
 
@@ -1687,33 +1753,51 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
             }
         }
 
+        void runComplete() {
+            EventExecutor executor = ctx.executor();
+            // Jump back on the EventExecutor. We do this even if we are already on the EventLoop to guard against
+            // reentrancy issues. Failing to do so could lead to the situation of tryDecode(...) be called and so
+            // channelRead(...) while still in the decode loop. In this case channelRead(...) might release the input
+            // buffer if its empty which would then result in an IllegalReferenceCountException when we try to continue
+            // decoding.
+            //
+            // See https://github.com/netty/netty-tcnative/issues/68
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    resumeOnEventExecutor();
+                }
+            });
+        }
+
         @Override
         public void run() {
             try {
-                runAllDelegatedTasks(engine);
-
-                // All tasks were processed.
-                assert engine.getHandshakeStatus() != HandshakeStatus.NEED_TASK;
-
-                // Jump back on the EventExecutor.
-                ctx.executor().execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        resumeOnEventExecutor();
-                    }
-                });
+                Runnable task = engine.getDelegatedTask();
+                if (task == null) {
+                    // The task was processed in the meantime. Let's just return.
+                    return;
+                }
+                if (task instanceof AsyncRunnable) {
+                    AsyncRunnable asyncTask = (AsyncRunnable) task;
+                    asyncTask.run(runCompleteTask);
+                } else {
+                    task.run();
+                    runComplete();
+                }
             } catch (final Throwable cause) {
                 handleException(cause);
             }
         }
 
         private void handleException(final Throwable cause) {
-            if (ctx.executor().inEventLoop()) {
+            EventExecutor executor = ctx.executor();
+            if (executor.inEventLoop()) {
                 clearState(STATE_PROCESS_TASK);
                 safeExceptionCaught(cause);
             } else {
                 try {
-                    ctx.executor().execute(new Runnable() {
+                    executor.execute(new Runnable() {
                         @Override
                         public void run() {
                             clearState(STATE_PROCESS_TASK);
@@ -1864,8 +1948,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
                 // because of a propagated Exception.
                 //
                 // See https://github.com/netty/netty/issues/5931
-                safeClose(ctx, closeNotifyPromise, ctx.newPromise().addListener(
-                        new ChannelPromiseNotifier(false, promise)));
+                safeClose(ctx, closeNotifyPromise, PromiseNotifier.cascade(false, ctx.newPromise(), promise));
             } else {
                 /// We already handling the close_notify so just attach the promise to the sslClosePromise.
                 sslClosePromise.addListener(new FutureListener<Channel>() {
@@ -1968,7 +2051,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         if (!oldHandshakePromise.isDone()) {
             // There's no need to handshake because handshake is in progress already.
             // Merge the new promise into the old one.
-            oldHandshakePromise.addListener(new PromiseNotifier<Channel, Future<Channel>>(newHandshakePromise));
+            PromiseNotifier.cascade(oldHandshakePromise, newHandshakePromise);
         } else {
             handshakePromise = newHandshakePromise;
             handshake(true);
@@ -2020,7 +2103,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
             return;
         }
 
-        final ScheduledFuture<?> timeoutFuture = ctx.executor().schedule(new Runnable() {
+        final Future<?> timeoutFuture = ctx.executor().schedule(new Runnable() {
             @Override
             public void run() {
                 if (localHandshakePromise.isDone()) {
@@ -2071,7 +2154,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
             return;
         }
 
-        final ScheduledFuture<?> timeoutFuture;
+        final Future<?> timeoutFuture;
         if (!flushFuture.isDone()) {
             long closeNotifyTimeout = closeNotifyFlushTimeoutMillis;
             if (closeNotifyTimeout > 0) {
@@ -2107,7 +2190,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
                     // See https://github.com/netty/netty/issues/2358
                     addCloseListener(ctx.close(ctx.newPromise()), promise);
                 } else {
-                    final ScheduledFuture<?> closeNotifyReadTimeoutFuture;
+                    final Future<?> closeNotifyReadTimeoutFuture;
 
                     if (!sslClosePromise.isDone()) {
                         closeNotifyReadTimeoutFuture = ctx.executor().schedule(new Runnable() {
@@ -2149,7 +2232,7 @@ public class SslHandler extends ByteToMessageDecoder implements ChannelOutboundH
         // IllegalStateException.
         // Also we not want to log if the notification happens as this is expected in some cases.
         // See https://github.com/netty/netty/issues/5598
-        future.addListener(new ChannelPromiseNotifier(false, promise));
+        PromiseNotifier.cascade(false, future, promise);
     }
 
     /**

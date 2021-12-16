@@ -367,6 +367,10 @@ public class DefaultHttpHeaders extends HttpHeaders {
 
     private static void validateHeaderNameElement(byte value) {
         switch (value) {
+        case 0x1c:
+        case 0x1d:
+        case 0x1e:
+        case 0x1f:
         case 0x00:
         case '\t':
         case '\n':
@@ -391,6 +395,10 @@ public class DefaultHttpHeaders extends HttpHeaders {
 
     private static void validateHeaderNameElement(char value) {
         switch (value) {
+        case 0x1c:
+        case 0x1d:
+        case 0x1e:
+        case 0x1f:
         case 0x00:
         case '\t':
         case '\n':
@@ -475,6 +483,8 @@ public class DefaultHttpHeaders extends HttpHeaders {
                     throw new IllegalArgumentException("a header value contains a prohibited character '\\v': " + seq);
                 case '\f':
                     throw new IllegalArgumentException("a header value contains a prohibited character '\\f': " + seq);
+                default:
+                    break;
                 }
             }
 
@@ -486,6 +496,8 @@ public class DefaultHttpHeaders extends HttpHeaders {
                             return 1;
                         case '\n':
                             return 2;
+                        default:
+                            break;
                     }
                     break;
                 case 1:
@@ -501,6 +513,8 @@ public class DefaultHttpHeaders extends HttpHeaders {
                         default:
                             throw new IllegalArgumentException("only ' ' and '\\t' are allowed after '\\n': " + seq);
                     }
+                default:
+                    break;
             }
             return state;
         }

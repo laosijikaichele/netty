@@ -16,39 +16,24 @@
 package io.netty.handler.ssl;
 
 import java.security.Provider;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLSessionContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
-import static org.junit.Assume.assumeTrue;
 
-@RunWith(Parameterized.class)
+@DisabledIf("checkConscryptDisabled")
 public class ConscryptJdkSslEngineInteropTest extends SSLEngineTest {
 
-    @Parameterized.Parameters(name = "{index}: bufferType = {0}, combo = {1}, delegate = {2}")
-    public static Collection<Object[]> data() {
-        List<Object[]> params = new ArrayList<Object[]>();
-        for (BufferType type: BufferType.values()) {
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), false });
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), true });
-        }
-        return params;
+    public ConscryptJdkSslEngineInteropTest() {
+        super(false);
     }
 
-    public ConscryptJdkSslEngineInteropTest(BufferType type, ProtocolCipherCombo combo, boolean delegate) {
-        super(type, combo, delegate);
-    }
-
-    @BeforeClass
-    public static void checkConscrypt() {
-        assumeTrue(Conscrypt.isAvailable());
+    static boolean checkConscryptDisabled() {
+        return !Conscrypt.isAvailable();
     }
 
     @Override
@@ -66,16 +51,24 @@ public class ConscryptJdkSslEngineInteropTest extends SSLEngineTest {
         return Java8SslTestUtils.conscryptProvider();
     }
 
-    @Ignore /* Does the JDK support a "max certificate chain length"? */
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled /* Does the JDK support a "max certificate chain length"? */
     @Override
-    public void testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth() throws Exception {
+    public void testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth(SSLEngineTestParam param)
+            throws Exception {
     }
 
-    @Ignore /* Does the JDK support a "max certificate chain length"? */
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled /* Does the JDK support a "max certificate chain length"? */
     @Override
-    public void testMutualAuthValidClientCertChainTooLongFailRequireClientAuth() throws Exception {
+    public void testMutualAuthValidClientCertChainTooLongFailRequireClientAuth(SSLEngineTestParam param)
+            throws Exception {
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
     protected boolean mySetupMutualAuthServerIsValidServerException(Throwable cause) {
         // TODO(scott): work around for a JDK issue. The exception should be SSLHandshakeException.
@@ -85,5 +78,13 @@ public class ConscryptJdkSslEngineInteropTest extends SSLEngineTest {
     @Override
     protected void invalidateSessionsAndAssert(SSLSessionContext context) {
         // Not supported by conscrypt
+    }
+
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled("Disabled due a conscrypt bug")
+    @Override
+    public void testInvalidSNIIsIgnoredAndNotThrow(SSLEngineTestParam param) throws Exception {
+        super.testInvalidSNIIsIgnoredAndNotThrow(param);
     }
 }

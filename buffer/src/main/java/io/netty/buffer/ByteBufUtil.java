@@ -227,18 +227,123 @@ public final class ByteBufUtil {
 
     /**
      * Returns the reader index of needle in haystack, or -1 if needle is not in haystack.
+     * This method uses the <a href="https://en.wikipedia.org/wiki/Two-way_string-matching_algorithm">Two-Way
+     * string matching algorithm</a>, which yields O(1) space complexity and excellent performance.
      */
     public static int indexOf(ByteBuf needle, ByteBuf haystack) {
-        // TODO: maybe use Boyer Moore for efficiency.
-        int attempts = haystack.readableBytes() - needle.readableBytes() + 1;
-        for (int i = 0; i < attempts; i++) {
-            if (equals(needle, needle.readerIndex(),
-                       haystack, haystack.readerIndex() + i,
-                       needle.readableBytes())) {
-                return haystack.readerIndex() + i;
+        if (haystack == null || needle == null) {
+            return -1;
+        }
+
+        if (needle.readableBytes() > haystack.readableBytes()) {
+            return -1;
+        }
+
+        int n = haystack.readableBytes();
+        int m = needle.readableBytes();
+        if (m == 0) {
+            return 0;
+        }
+
+        // When the needle has only one byte that can be read,
+        // the ByteBuf.indexOf() can be used
+        if (m == 1) {
+            return haystack.indexOf(haystack.readerIndex(), haystack.writerIndex(),
+                          needle.getByte(needle.readerIndex()));
+        }
+
+        int i;
+        int j = 0;
+        int aStartIndex = needle.readerIndex();
+        int bStartIndex = haystack.readerIndex();
+        long suffixes =  maxSuf(needle, m, aStartIndex, true);
+        long prefixes = maxSuf(needle, m, aStartIndex, false);
+        int ell = Math.max((int) (suffixes >> 32), (int) (prefixes >> 32));
+        int per = Math.max((int) suffixes, (int) prefixes);
+        int memory;
+        int length = Math.min(m - per, ell + 1);
+
+        if (equals(needle, aStartIndex, needle, aStartIndex + per,  length)) {
+            memory = -1;
+            while (j <= n - m) {
+                i = Math.max(ell, memory) + 1;
+                while (i < m && needle.getByte(i + aStartIndex) == haystack.getByte(i + j + bStartIndex)) {
+                    ++i;
+                }
+                if (i > n) {
+                    return -1;
+                }
+                if (i >= m) {
+                    i = ell;
+                    while (i > memory && needle.getByte(i + aStartIndex) == haystack.getByte(i + j + bStartIndex)) {
+                        --i;
+                    }
+                    if (i <= memory) {
+                        return j;
+                    }
+                    j += per;
+                    memory = m - per - 1;
+                } else {
+                    j += i - ell;
+                    memory = -1;
+                }
+            }
+        } else {
+            per = Math.max(ell + 1, m - ell - 1) + 1;
+            while (j <= n - m) {
+                i = ell + 1;
+                while (i < m && needle.getByte(i + aStartIndex) == haystack.getByte(i + j + bStartIndex)) {
+                    ++i;
+                }
+                if (i > n) {
+                    return -1;
+                }
+                if (i >= m) {
+                    i = ell;
+                    while (i >= 0 && needle.getByte(i + aStartIndex) == haystack.getByte(i + j + bStartIndex)) {
+                        --i;
+                    }
+                    if (i < 0) {
+                        return j;
+                    }
+                    j += per;
+                } else {
+                    j += i - ell;
+                }
             }
         }
         return -1;
+    }
+
+    private static long maxSuf(ByteBuf x, int m, int start, boolean isSuffix) {
+        int p = 1;
+        int ms = -1;
+        int j = start;
+        int k = 1;
+        byte a;
+        byte b;
+        while (j + k < m) {
+            a = x.getByte(j + k);
+            b = x.getByte(ms + k);
+            boolean suffix = isSuffix ? a < b : a > b;
+            if (suffix) {
+                j += k;
+                k = 1;
+                p = j - ms;
+            } else if (a == b) {
+                if (k != p) {
+                    ++k;
+                } else {
+                    j += p;
+                    k = 1;
+                }
+            } else {
+                ms = j;
+                j = ms + 1;
+                k = p = 1;
+            }
+        }
+        return ((long) ms << 32) + p;
     }
 
     /**
@@ -369,7 +474,7 @@ public final class ByteBufUtil {
     private static long compareUintLittleEndian(
             ByteBuf bufferA, ByteBuf bufferB, int aIndex, int bIndex, int uintCountIncrement) {
         for (int aEnd = aIndex + uintCountIncrement; aIndex < aEnd; aIndex += 4, bIndex += 4) {
-            long comp = bufferA.getUnsignedIntLE(aIndex) - bufferB.getUnsignedIntLE(bIndex);
+            long comp = uintFromLE(bufferA.getUnsignedIntLE(aIndex)) - uintFromLE(bufferB.getUnsignedIntLE(bIndex));
             if (comp != 0) {
                 return comp;
             }
@@ -380,7 +485,9 @@ public final class ByteBufUtil {
     private static long compareUintBigEndianA(
             ByteBuf bufferA, ByteBuf bufferB, int aIndex, int bIndex, int uintCountIncrement) {
         for (int aEnd = aIndex + uintCountIncrement; aIndex < aEnd; aIndex += 4, bIndex += 4) {
-            long comp =  bufferA.getUnsignedInt(aIndex) - bufferB.getUnsignedIntLE(bIndex);
+            long a = bufferA.getUnsignedInt(aIndex);
+            long b = uintFromLE(bufferB.getUnsignedIntLE(bIndex));
+            long comp =  a - b;
             if (comp != 0) {
                 return comp;
             }
@@ -391,12 +498,18 @@ public final class ByteBufUtil {
     private static long compareUintBigEndianB(
             ByteBuf bufferA, ByteBuf bufferB, int aIndex, int bIndex, int uintCountIncrement) {
         for (int aEnd = aIndex + uintCountIncrement; aIndex < aEnd; aIndex += 4, bIndex += 4) {
-            long comp =  bufferA.getUnsignedIntLE(aIndex) - bufferB.getUnsignedInt(bIndex);
+            long a = uintFromLE(bufferA.getUnsignedIntLE(aIndex));
+            long b = bufferB.getUnsignedInt(bIndex);
+            long comp =  a - b;
             if (comp != 0) {
                 return comp;
             }
         }
         return 0;
+    }
+
+    private static long uintFromLE(long value) {
+        return Long.reverseBytes(value) >>> Integer.SIZE;
     }
 
     private static final class SWARByteSearch {

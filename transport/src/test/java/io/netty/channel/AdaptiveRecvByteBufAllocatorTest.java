@@ -18,21 +18,21 @@ package io.netty.channel;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class AdaptiveRecvByteBufAllocatorTest {
     @Mock
     private ChannelConfig config;
-    private ByteBufAllocator alloc = UnpooledByteBufAllocator.DEFAULT;
+    private final ByteBufAllocator alloc = UnpooledByteBufAllocator.DEFAULT;
     private RecvByteBufAllocator.ExtendedHandle handle;
 
-    @Before
+    @BeforeEach
     public void setup() {
         config = mock(ChannelConfig.class);
         when(config.isAutoRead()).thenReturn(true);

@@ -16,7 +16,7 @@
 package io.netty.handler.codec.compression;
 
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class Bzip2IntegrationTest extends AbstractIntegrationTest {
 
@@ -34,20 +34,23 @@ public class Bzip2IntegrationTest extends AbstractIntegrationTest {
     public void test3Tables() throws Exception {
         byte[] data = new byte[500];
         rand.nextBytes(data);
-        testIdentity(data);
+        testIdentity(data, true);
+        testIdentity(data, false);
     }
 
     @Test
     public void test4Tables() throws Exception {
         byte[] data = new byte[1100];
         rand.nextBytes(data);
-        testIdentity(data);
+        testIdentity(data, true);
+        testIdentity(data, false);
     }
 
     @Test
     public void test5Tables() throws Exception {
         byte[] data = new byte[2300];
         rand.nextBytes(data);
-        testIdentity(data);
+        testIdentity(data, true);
+        testIdentity(data, false);
     }
 }

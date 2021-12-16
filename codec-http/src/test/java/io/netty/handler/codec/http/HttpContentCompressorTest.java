@@ -41,7 +41,10 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
 
 import static io.netty.handler.codec.http.HttpHeadersTestUtils.of;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -49,13 +52,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class HttpContentCompressorTest {
 
@@ -210,6 +213,65 @@ public class HttpContentCompressorTest {
 
         chunk = ch.readOutbound();
         assertThat(chunk.content().isReadable(), is(false));
+        assertThat(chunk, is(instanceOf(LastHttpContent.class)));
+        chunk.release();
+
+        assertThat(ch.readOutbound(), is(nullValue()));
+    }
+
+    @Test
+    public void testChunkedContentWithAssembledResponseIdentityEncoding() throws Exception {
+        EmbeddedChannel ch = new EmbeddedChannel(new HttpContentCompressor());
+        ch.writeInbound(new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, HttpMethod.GET, "/"));
+
+        HttpResponse res = new AssembledHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK,
+                Unpooled.copiedBuffer("Hell", CharsetUtil.US_ASCII));
+        res.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+        ch.writeOutbound(res);
+
+        ch.writeOutbound(new DefaultHttpContent(Unpooled.copiedBuffer("o, w", CharsetUtil.US_ASCII)));
+        ch.writeOutbound(new DefaultLastHttpContent(Unpooled.copiedBuffer("orld", CharsetUtil.US_ASCII)));
+
+        HttpContent chunk;
+        chunk = ch.readOutbound();
+        assertThat(chunk.content().toString(StandardCharsets.UTF_8), is("Hell"));
+        chunk.release();
+
+        chunk = ch.readOutbound();
+        assertThat(chunk.content().toString(StandardCharsets.UTF_8), is("o, w"));
+        chunk.release();
+
+        chunk = ch.readOutbound();
+        assertThat(chunk.content().toString(StandardCharsets.UTF_8), is("orld"));
+        assertThat(chunk, is(instanceOf(LastHttpContent.class)));
+        chunk.release();
+
+        assertThat(ch.readOutbound(), is(nullValue()));
+    }
+
+    @Test
+    public void testContentWithAssembledResponseIdentityEncodingHttp10() throws Exception {
+        EmbeddedChannel ch = new EmbeddedChannel(new HttpContentCompressor());
+        ch.writeInbound(new DefaultFullHttpRequest(HttpVersion.HTTP_1_0, HttpMethod.GET, "/"));
+
+        HttpResponse res = new AssembledHttpResponse(HttpVersion.HTTP_1_0, HttpResponseStatus.OK,
+                Unpooled.copiedBuffer("Hell", CharsetUtil.US_ASCII));
+        ch.writeOutbound(res);
+
+        ch.writeOutbound(new DefaultHttpContent(Unpooled.copiedBuffer("o, w", CharsetUtil.US_ASCII)));
+        ch.writeOutbound(new DefaultLastHttpContent(Unpooled.copiedBuffer("orld", CharsetUtil.US_ASCII)));
+
+        HttpContent chunk;
+        chunk = ch.readOutbound();
+        assertThat(chunk.content().toString(StandardCharsets.UTF_8), is("Hell"));
+        chunk.release();
+
+        chunk = ch.readOutbound();
+        assertThat(chunk.content().toString(StandardCharsets.UTF_8), is("o, w"));
+        chunk.release();
+
+        chunk = ch.readOutbound();
+        assertThat(chunk.content().toString(StandardCharsets.UTF_8), is("orld"));
         assertThat(chunk, is(instanceOf(LastHttpContent.class)));
         chunk.release();
 
@@ -716,6 +778,7 @@ public class HttpContentCompressorTest {
         assertThat(res.headers().get(HttpHeaderNames.CONTENT_LENGTH), is(nullValue()));
         assertThat(res.headers().get(HttpHeaderNames.CONTENT_ENCODING), is("gzip"));
     }
+
     private static void assertAssembledEncodedResponse(EmbeddedChannel ch) {
         Object o = ch.readOutbound();
         assertThat(o, is(instanceOf(AssembledHttpResponse.class)));

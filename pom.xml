@@ -26,7 +26,7 @@
   <groupId>io.netty</groupId>
   <artifactId>netty-parent</artifactId>
   <packaging>pom</packaging>
-  <version>4.1.65.Final-SNAPSHOT</version>
+  <version>4.1.73.Final-SNAPSHOT</version>
 
   <name>Netty</name>
   <url>https://netty.io/</url>
@@ -95,6 +95,9 @@
                 <exclude>**/microbench/**/*.java</exclude>
                 <exclude>**/microbenchmark/**/*.java</exclude>
                 <exclude>**/generated/**/*.java</exclude>
+                <exclude>**/*Benchmark.java</exclude>
+                <exclude>**/*Bench.java</exclude>
+                <exclude>**/*Test.java</exclude>
               </sourceFileExcludes>
               <docfilessubdirs>true</docfilessubdirs>
               <outputDirectory>${project.build.directory}/api</outputDirectory>
@@ -155,7 +158,6 @@
               <windowTitle>Netty Source Xref (${project.version})</windowTitle>
               <excludes>
                 <exclude>**/com/sun/**/*.java</exclude>
-                <exclude>**/example/**/*.java</exclude>
                 <exclude>**/microbench/**/*.java</exclude>
                 <exclude>**/microbenchmark/**/*.java</exclude>
               </excludes>
@@ -179,6 +181,30 @@
         <testJvm />
       </properties>
     </profile>
+    <profile>
+      <id>java17</id>
+      <activation>
+        <jdk>17</jdk>
+      </activation>
+      <properties>
+        <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
+        <argLine.alpnAgent />
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
+        <forbiddenapis.skip>true</forbiddenapis.skip>
+        <!-- Needed because of https://issues.apache.org/jira/browse/MENFORCER-275 -->
+        <enforcer.plugin.version>3.0.0-M3</enforcer.plugin.version>
+        <!-- 1.4.x does not work in Java10+ -->
+        <jboss.marshalling.version>2.0.5.Final</jboss.marshalling.version>
+        <!-- This is the minimum supported by Java12+ -->
+        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.7</maven.compiler.target>
+        <!-- pax-exam does not work on latest Java12 EA 22 build -->
+        <skipOsgiTestsuite>true</skipOsgiTestsuite>
+      </properties>
+    </profile>
+
     <!-- JDK16 -->
     <profile>
       <id>java16</id>
@@ -201,8 +227,6 @@
         <maven.compiler.target>1.7</maven.compiler.target>
         <!-- pax-exam does not work on latest Java12 EA 22 build -->
         <skipOsgiTestsuite>true</skipOsgiTestsuite>
-        <!-- doesn't work with java16 -->
-        <skipJapicmp>true</skipJapicmp>
       </properties>
     </profile>
 
@@ -213,6 +237,9 @@
         <jdk>15</jdk>
       </activation>
       <properties>
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
         <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
         <argLine.alpnAgent />
         <forbiddenapis.skip>true</forbiddenapis.skip>
@@ -234,6 +261,9 @@
         <jdk>14</jdk>
       </activation>
       <properties>
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
         <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
         <argLine.alpnAgent />
         <forbiddenapis.skip>true</forbiddenapis.skip>
@@ -255,6 +285,9 @@
         <jdk>13</jdk>
       </activation>
       <properties>
+        <argLine.java9.extras />
+        <!-- Export some stuff which is used during our tests -->
+        <argLine.java9>--illegal-access=deny ${argLine.java9.extras}</argLine.java9>
         <!-- Not use alpn agent as Java11+ supports alpn out of the box -->
         <argLine.alpnAgent />
         <forbiddenapis.skip>true</forbiddenapis.skip>
@@ -358,6 +391,15 @@
 
     <profile>
       <id>boringssl</id>
+      <activation>
+        <!--
+          Automatically active on windows as we only release static boringssl version of
+          netty-tcnative for windows.
+        -->
+        <os>
+          <family>windows</family>
+        </os>
+      </activation>
       <properties>
         <tcnative.artifactId>netty-tcnative-boringssl-static</tcnative.artifactId>
         <tcnative.classifier />
@@ -442,7 +484,7 @@
     <netty.dev.tools.directory>${project.build.directory}/dev-tools</netty.dev.tools.directory>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <netty.build.version>29</netty.build.version>
+    <netty.build.version>30</netty.build.version>
     <jboss.marshalling.version>1.4.11.Final</jboss.marshalling.version>
     <jetty.alpnAgent.version>2.0.10</jetty.alpnAgent.version>
     <jetty.alpnAgent.path>"${settings.localRepository}"/org/mortbay/jetty/alpn/jetty-alpn-agent/${jetty.alpnAgent.version}/jetty-alpn-agent-${jetty.alpnAgent.version}.jar</jetty.alpnAgent.path>
@@ -465,7 +507,8 @@
     <!-- keep in sync with PlatformDependent#ALLOWED_LINUX_OS_CLASSIFIERS -->
     <os.detection.classifierWithLikes>fedora,suse,arch</os.detection.classifierWithLikes>
     <tcnative.artifactId>netty-tcnative</tcnative.artifactId>
-    <tcnative.version>2.0.39.Final</tcnative.version>
+    <!-- Keep in sync with bom/pom.xml -->
+    <tcnative.version>2.0.46.Final</tcnative.version>
     <tcnative.classifier>${os.detected.classifier}</tcnative.classifier>
     <conscrypt.groupId>org.conscrypt</conscrypt.groupId>
     <conscrypt.artifactId>conscrypt-openjdk-uber</conscrypt.artifactId>
@@ -474,7 +517,7 @@
     <jni.classifier>${os.detected.name}-${os.detected.arch}</jni.classifier>
     <logging.config>${project.basedir}/../common/src/test/resources/logback-test.xml</logging.config>
     <logging.logLevel>debug</logging.logLevel>
-    <log4j2.version>2.6.2</log4j2.version>
+    <log4j2.version>2.16.0</log4j2.version>
     <enforcer.plugin.version>1.4.1</enforcer.plugin.version>
     <junit.version>5.7.0</junit.version>
     <testJavaHome>${java.home}</testJavaHome>
@@ -482,9 +525,8 @@
     <skipOsgiTestsuite>false</skipOsgiTestsuite>
     <skipAutobahnTestsuite>false</skipAutobahnTestsuite>
     <skipHttp2Testsuite>false</skipHttp2Testsuite>
-    <skipJapicmp>false</skipJapicmp>
-    <graalvm.version>19.2.1</graalvm.version>
-    <brotli4j.version>1.4.2</brotli4j.version>
+    <graalvm.version>19.3.6</graalvm.version>
+    <brotli4j.version>1.6.0</brotli4j.version>
     <!-- By default skip native testsuite as it requires a custom environment with graalvm installed -->
     <skipNativeImageTestsuite>true</skipNativeImageTestsuite>
     <skipShadingTestsuite>false</skipShadingTestsuite>
@@ -510,12 +552,14 @@
     <module>codec-xml</module>
     <module>resolver</module>
     <module>resolver-dns</module>
+    <module>resolver-dns-classes-macos</module>
     <module>resolver-dns-native-macos</module>
-    <module>tarball</module>
     <module>transport</module>
     <module>transport-native-unix-common-tests</module>
     <module>transport-native-unix-common</module>
+    <module>transport-classes-epoll</module>
     <module>transport-native-epoll</module>
+    <module>transport-classes-kqueue</module>
     <module>transport-native-kqueue</module>
     <module>transport-rxtx</module>
     <module>transport-sctp</module>
@@ -595,17 +639,23 @@
         <version>3.0.0-alpha-5</version>
       </dependency>
 
-      <!-- Our own Tomcat Native fork - completely optional, used for accelerating SSL with OpenSSL. -->
+      <!-- Our own Tomcat Native fork - completely optional for the native lib, used for accelerating SSL with OpenSSL. -->
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>netty-tcnative-classes</artifactId>
+        <version>${tcnative.version}</version>
+        <scope>compile</scope>
+      </dependency>
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>${tcnative.artifactId}</artifactId>
         <version>${tcnative.version}</version>
         <classifier>${tcnative.classifier}</classifier>
-        <scope>compile</scope>
+        <scope>runtime</scope>
         <optional>true</optional>
       </dependency>
 
-      <!-- Conscrypt - needed for running tests, used for acclerating SSL with OpenSSL. -->
+      <!-- Conscrypt - needed for running tests, used for accelerating SSL with OpenSSL. -->
       <dependency>
         <groupId>${conscrypt.groupId}</groupId>
         <artifactId>${conscrypt.artifactId}</artifactId>
@@ -623,7 +673,7 @@
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcpkix-jdk15on</artifactId>
-        <version>1.68</version>
+        <version>1.69</version>
         <scope>compile</scope>
         <optional>true</optional>
       </dependency>
@@ -635,7 +685,7 @@
       <dependency>
         <groupId>org.bouncycastle</groupId>
         <artifactId>bcprov-jdk15on</artifactId>
-        <version>1.68</version>
+        <version>1.69</version>
         <scope>compile</scope>
         <optional>true</optional>
       </dependency>
@@ -665,6 +715,12 @@
         <groupId>com.github.jponge</groupId>
         <artifactId>lzma-java</artifactId>
         <version>1.3</version>
+      </dependency>
+      <dependency>
+        <groupId>com.github.luben</groupId>
+        <artifactId>zstd-jni</artifactId>
+        <version>1.5.0-2</version>
+        <optional>true</optional>
       </dependency>
       <dependency>
         <groupId>com.aayushatharva.brotli4j</groupId>
@@ -730,7 +786,7 @@
       <dependency>
         <groupId>org.apache.logging.log4j</groupId>
         <artifactId>log4j-1.2-api</artifactId>
-        <version>2.14.1</version>
+        <version>${log4j2.version}</version>
         <exclusions>
           <exclusion>
             <artifactId>mail</artifactId>
@@ -769,6 +825,12 @@
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
@@ -814,6 +876,12 @@
         <version>1.2.3</version>
         <scope>test</scope>
       </dependency>
+      <dependency>
+        <groupId>io.github.artsok</groupId>
+        <artifactId>rerunner-jupiter</artifactId>
+        <version>2.1.6</version>
+        <scope>test</scope>
+      </dependency>
 
       <!-- Test dependencies for jboss marshalling encoder/decoder -->
       <dependency>
@@ -841,7 +909,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-compress</artifactId>
-        <version>1.19</version>
+        <version>1.21</version>
         <scope>test</scope>
       </dependency>
 
@@ -906,6 +974,11 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.junit.vintage</groupId>
       <artifactId>junit-vintage-engine</artifactId>
       <scope>test</scope>
@@ -948,9 +1021,92 @@
 
     <plugins>
       <plugin>
+        <groupId>org.revapi</groupId>
+        <artifactId>revapi-maven-plugin</artifactId>
+        <version>0.14.6</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.revapi</groupId>
+            <artifactId>revapi-java</artifactId>
+            <version>0.26.1</version>
+          </dependency>
+        </dependencies>
+        <configuration>
+          <analysisConfiguration>
+            <revapi.filter>
+              <elements>
+                <exclude>
+                  <item>
+                    <matcher>java-package</matcher>
+                    <match>/.*\.internal\..*/</match>
+                  </item>
+                  <item>
+                    <matcher>java-package</matcher>
+                    <match>/io\.netty\.microbench\..*/</match>
+                  </item>
+                  <item>
+                    <matcher>java-package</matcher>
+                    <match>/org\.openjdk\.jmh\..*/</match>
+                  </item>
+                  <item>
+                    <matcher>java</matcher>
+                    <match>@io.netty.util.internal.UnstableApi ^*;</match>
+                  </item>
+                </exclude>
+              </elements>
+              <annotated>
+                <exclude>
+                  <item>@io.netty.util.internal.UnstableApi</item>
+                </exclude>
+              </annotated>
+            </revapi.filter>
+            <revapi.differences>
+              <differences>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.missing.oldClass</code> <!-- Missing in prior Netty versions -->
+                  <old>missing-class org.slf4j.Logger</old>
+                  <new>missing-class org.slf4j.Logger</new>
+                  <justification>The com.barchart.udt library exposes this class in their API, but slf4j is an optional dependency to Netty.</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.missing.newClass</code> <!-- Missing in this Netty version -->
+                  <old>missing-class org.slf4j.Logger</old>
+                  <new>missing-class org.slf4j.Logger</new>
+                  <justification>The com.barchart.udt library exposes this class in their API, but slf4j is an optional dependency to Netty.</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.class.externalClassExposedInAPI</code>
+                  <regex>true</regex>
+                  <package>io\.netty\..*</package>
+                  <justification>They're not "external classes" if they're from a Netty package.</justification>
+                </item>
+                <item>
+                  <ignore>true</ignore>
+                  <code>java.class.removed</code>
+                  <regex>true</regex>
+                  <package>.*\.generated($|\..+)</package>
+                  <justification>Ignore all classes generated by JMH.</justification>
+                </item>
+              </differences>
+            </revapi.differences>
+          </analysisConfiguration>
+        </configuration>
+        <executions>
+          <execution>
+            <id>api-check</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.github.siom79.japicmp</groupId>
         <artifactId>japicmp-maven-plugin</artifactId>
-        <version>0.14.3</version>
+        <version>0.15.4</version>
         <configuration>
           <parameter>
             <ignoreMissingOldVersion>true</ignoreMissingOldVersion>
@@ -967,7 +1123,6 @@
               <exclude>io.netty.util.internal.shaded</exclude>
             </excludes>
           </parameter>
-          <skip>${skipJapicmp}</skip>
         </configuration>
         <executions>
           <execution>
@@ -1144,6 +1299,9 @@
               <includes>
                 <include>**/pom.xml</include>
               </includes>
+              <excludes>
+                <exclude>**/target/**</exclude>
+              </excludes>
             </formatFileSet>
           </formatFileSets>
           <useDefaultFormatFileSet>false</useDefaultFormatFileSet>
@@ -1293,9 +1451,6 @@
           <skip>${skipDeploy}</skip>
         </configuration>
       </plugin>
-      <!-- After artifacts were deployed from linux and macos we need to execute the following on macOS (in the root of the project).
-           mvn -Psonatype-oss-release,full,uber-staging -pl transport-native-kqueue,transport-native-unix-common,all,tarball clean package gpg:sign org.sonatype.plugins:nexus-staging-maven-plugin:deploy -DstagingRepositoryId=${netty-id} -DnexusUrl=https://oss.sonatype.org -DserverId=sonatype-nexus-staging
-      -->
       <plugin>
         <artifactId>maven-release-plugin</artifactId>
         <!-- Downgrade to 2.4.1 if release fails -->
@@ -1399,7 +1554,7 @@
           <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.10.9</version>
+            <version>1.10.11</version>
           </dependency>
           <dependency>
             <groupId>org.apache.ant</groupId>
@@ -1450,6 +1605,37 @@
         <plugin>
           <artifactId>maven-resources-plugin</artifactId>
           <version>3.0.1</version>
+          <executions>
+            <execution>
+              <id>default-testResources</id>
+              <phase>process-test-resources</phase>
+              <goals>
+                <goal>testResources</goal>
+              </goals>
+              <configuration>
+                <resources>
+                  <resource>
+                    <directory>${project.basedir}/src/test/resources</directory>
+                  </resource>
+                  <resource>
+                    <directory>${project.build.outputDirectory}</directory>
+                    <excludes>
+                      <!--
+-                       Exclude native files as these are already in the classes directory. This is needed as
+-                       otherwise NativeLibraryLoader will fail to load the native lib as it detects duplicates on
+-                       the classpath.
+-                     -->
+                      <exclude>META-INF/native/*.*</exclude>
+                    </excludes>
+                    <includes>
+                      <!-- Include everything else -->
+                      <include>*.*</include>
+                    </includes>
+                  </resource>
+                </resources>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
         <plugin>
           <groupId>org.ops4j.pax.exam</groupId>

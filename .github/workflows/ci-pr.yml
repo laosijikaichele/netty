@@ -1,3 +1,18 @@
+# ----------------------------------------------------------------------------
+# Copyright 2021 The Netty Project
+#
+# The Netty Project licenses this file to you under the Apache License,
+# version 2.0 (the "License"); you may not use this file except in compliance
+# with the License. You may obtain a copy of the License at:
+#
+#   https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+# License for the specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
 name: Build PR
 
 on:
@@ -29,7 +44,49 @@ jobs:
             ${{ runner.os }}-maven-verify-pr-
             ${{ runner.os }}-maven-
       - name: Verify with Maven
-        run: ./mvnw verify -B --file pom.xml -DskipTests=true
+        run: ./mvnw -B -ntp --file pom.xml verify -DskipTests=true
+
+      - name: Checking bom dependency versions
+        run: ./.github/scripts/check_bom_dependencies.sh
+
+  build-pr-windows:
+    runs-on: windows-2016
+    name: windows-x86_64-java11-boringssl
+    needs: verify-pr
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
+
+      # Cache .m2/repository
+      # Caching of maven dependencies
+      - uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: pr-windows-x86_64-maven-cache-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            pr-windows-x86_64-maven-cache-
+
+      - name: Build project
+        run: ./mvnw.cmd -B -ntp --file pom.xml clean package -Pboringssl -DskipHttp2Testsuite=true -DskipAutobahnTestsuite=true
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: test-results-windows-x86_64-java11-boringssl
+          path: '**/target/surefire-reports/TEST-*.xml'
+
+      - uses: actions/upload-artifact@v2
+        if: ${{ failure() }}
+        with:
+          name: build-pr-windows-target
+          path: |
+            **/target/surefire-reports/
+            **/hs_err*.log
 
   build-pr-aarch64:
     name: linux-aarch64-verify-native
@@ -74,7 +131,7 @@ jobs:
           #
           # Use tcnative.classifier that is empty as we don't support using the shared lib version on ubuntu.
           run: |
-            JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64 ./mvnw -pl testsuite-native -am clean package -DskipTests=true -Dcheckstyle.skip=true -DskipNativeTestsuite=false -Dtcnative.classifier=
+            JAVA_HOME=/usr/lib/jvm/java-11-openjdk-arm64 ./mvnw -B -ntp -pl testsuite-native -am clean package -DskipTests=true -Dcheckstyle.skip=true -DskipNativeTestsuite=false -Dtcnative.classifier=
 
   build-pr:
     runs-on: ubuntu-latest
@@ -87,9 +144,12 @@ jobs:
           - setup: linux-x86_64-java11
             docker-compose-build: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.111.yaml build"
             docker-compose-run: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.111.yaml run build-leak"
-          - setup: linux-x86_64-java16
-            docker-compose-build: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.116.yaml build"
-            docker-compose-run: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.116.yaml run build-leak"
+          - setup: linux-x86_64-java11-graal
+            docker-compose-build: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.graalvm111.yaml build"
+            docker-compose-run: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.graalvm111.yaml run build-leak"
+          - setup: linux-x86_64-java17
+            docker-compose-build: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.117.yaml build"
+            docker-compose-run: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.117.yaml run build-leak"
           - setup: linux-x86_64-java11-boringssl
             docker-compose-build: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.111.yaml build"
             docker-compose-run: "-f docker/docker-compose.yaml -f docker/docker-compose.centos-6.111.yaml run build-leak-boringssl-static"
@@ -141,5 +201,6 @@ jobs:
         if: ${{ failure() }}
         with:
           name: build-${{ matrix.setup }}-target
-          path: "**/target/"
-
+          path: |
+            **/target/surefire-reports/
+            **/hs_err*.log

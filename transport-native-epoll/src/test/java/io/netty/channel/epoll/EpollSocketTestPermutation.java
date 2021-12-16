@@ -68,7 +68,6 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
         return list;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public List<BootstrapFactory<ServerBootstrap>> serverSocket() {
         List<BootstrapFactory<ServerBootstrap>> toReturn = new ArrayList<BootstrapFactory<ServerBootstrap>>();
@@ -85,7 +84,7 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
                 public ServerBootstrap newInstance() {
                     ServerBootstrap serverBootstrap = new ServerBootstrap().group(EPOLL_BOSS_GROUP, EPOLL_WORKER_GROUP)
                                                                            .channel(EpollServerSocketChannel.class);
-                    serverBootstrap.option(EpollChannelOption.TCP_FASTOPEN, 5);
+                    serverBootstrap.option(ChannelOption.TCP_FASTOPEN, 5);
                     return serverBootstrap;
                 }
             });
@@ -207,10 +206,7 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
     }
 
     public List<TestsuitePermutation.BootstrapComboFactory<ServerBootstrap, Bootstrap>> domainSocket() {
-
-        List<TestsuitePermutation.BootstrapComboFactory<ServerBootstrap, Bootstrap>> list =
-                combo(serverDomainSocket(), clientDomainSocket());
-        return list;
+        return combo(serverDomainSocket(), clientDomainSocket());
     }
 
     public List<BootstrapFactory<ServerBootstrap>> serverDomainSocket() {
@@ -248,7 +244,22 @@ class EpollSocketTestPermutation extends SocketTestPermutation {
         );
     }
 
-    public static DomainSocketAddress newSocketAddress() {
-        return UnixTestUtils.newSocketAddress();
+    public List<TestsuitePermutation.BootstrapComboFactory<Bootstrap, Bootstrap>> domainDatagram() {
+        return combo(domainDatagramSocket(), domainDatagramSocket());
+    }
+
+    public List<BootstrapFactory<Bootstrap>> domainDatagramSocket() {
+        return Collections.<BootstrapFactory<Bootstrap>>singletonList(
+                new BootstrapFactory<Bootstrap>() {
+                    @Override
+                    public Bootstrap newInstance() {
+                        return new Bootstrap().group(EPOLL_WORKER_GROUP).channel(EpollDomainDatagramChannel.class);
+                    }
+                }
+        );
+    }
+
+    public static DomainSocketAddress newDomainSocketAddress() {
+        return UnixTestUtils.newDomainSocketAddress();
     }
 }

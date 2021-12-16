@@ -15,57 +15,40 @@
  */
 package io.netty.handler.ssl;
 
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLEngine;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static io.netty.handler.ssl.OpenSslTestUtils.checkShouldUseKeyManagerFactory;
-import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@RunWith(Parameterized.class)
 public class OpenSslJdkSslEngineInteroptTest extends SSLEngineTest {
 
-    @Parameterized.Parameters(name = "{index}: bufferType = {0}, combo = {1}, delegate = {2}, useTasks = {3}")
-    public static Collection<Object[]> data() {
-        List<Object[]> params = new ArrayList<Object[]>();
-        for (BufferType type: BufferType.values()) {
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), false, false });
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), false, true });
+    public OpenSslJdkSslEngineInteroptTest() {
+        super(SslProvider.isTlsv13Supported(SslProvider.JDK) &&
+                SslProvider.isTlsv13Supported(SslProvider.OPENSSL));
+    }
 
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), true, false});
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), true, true });
-
-            if (SslProvider.isTlsv13Supported(SslProvider.JDK) && SslProvider.isTlsv13Supported(SslProvider.OPENSSL)) {
-                params.add(new Object[] { type, ProtocolCipherCombo.tlsv13(), false, false });
-                params.add(new Object[] { type, ProtocolCipherCombo.tlsv13(), false, true });
-
-                params.add(new Object[] { type, ProtocolCipherCombo.tlsv13(), true, false });
-                params.add(new Object[] { type, ProtocolCipherCombo.tlsv13(), true, true });
-            }
+    @Override
+    protected List<SSLEngineTestParam> newTestParams() {
+        List<SSLEngineTestParam> params = super.newTestParams();
+        List<SSLEngineTestParam> testParams = new ArrayList<SSLEngineTestParam>();
+        for (SSLEngineTestParam param: params) {
+            testParams.add(new OpenSslEngineTestParam(true, param));
+            testParams.add(new OpenSslEngineTestParam(false, param));
         }
-        return params;
+        return testParams;
     }
 
-    private final boolean useTasks;
-
-    public OpenSslJdkSslEngineInteroptTest(BufferType type, ProtocolCipherCombo combo,
-                                           boolean delegate, boolean useTasks) {
-        super(type, combo, delegate);
-        this.useTasks = useTasks;
-    }
-
-    @BeforeClass
+    @BeforeAll
     public static void checkOpenSsl() {
-        assumeTrue(OpenSsl.isAvailable());
+        OpenSsl.ensureAvailability();
     }
 
     @Override
@@ -78,42 +61,55 @@ public class OpenSslJdkSslEngineInteroptTest extends SSLEngineTest {
         return SslProvider.JDK;
     }
 
-    @Ignore /* Does the JDK support a "max certificate chain length"? */
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled /* Does the JDK support a "max certificate chain length"? */
     @Override
-    public void testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth() throws Exception {
+    public void testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth(SSLEngineTestParam param)
+            throws Exception {
     }
 
-    @Ignore /* Does the JDK support a "max certificate chain length"? */
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled /* Does the JDK support a "max certificate chain length"? */
     @Override
-    public void testMutualAuthValidClientCertChainTooLongFailRequireClientAuth() throws Exception {
+    public void testMutualAuthValidClientCertChainTooLongFailRequireClientAuth(SSLEngineTestParam param)
+            throws Exception {
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testMutualAuthInvalidIntermediateCASucceedWithOptionalClientAuth() throws Exception {
+    public void testMutualAuthInvalidIntermediateCASucceedWithOptionalClientAuth(SSLEngineTestParam param)
+            throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testMutualAuthInvalidIntermediateCASucceedWithOptionalClientAuth();
+        super.testMutualAuthInvalidIntermediateCASucceedWithOptionalClientAuth(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testMutualAuthInvalidIntermediateCAFailWithOptionalClientAuth() throws Exception {
+    public void testMutualAuthInvalidIntermediateCAFailWithOptionalClientAuth(SSLEngineTestParam param)
+            throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testMutualAuthInvalidIntermediateCAFailWithOptionalClientAuth();
+        super.testMutualAuthInvalidIntermediateCAFailWithOptionalClientAuth(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testMutualAuthInvalidIntermediateCAFailWithRequiredClientAuth() throws Exception {
+    public void testMutualAuthInvalidIntermediateCAFailWithRequiredClientAuth(SSLEngineTestParam param)
+            throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testMutualAuthInvalidIntermediateCAFailWithRequiredClientAuth();
+        super.testMutualAuthInvalidIntermediateCAFailWithRequiredClientAuth(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testSessionAfterHandshakeKeyManagerFactoryMutualAuth() throws Exception {
+    public void testSessionAfterHandshakeKeyManagerFactoryMutualAuth(SSLEngineTestParam param) throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testSessionAfterHandshakeKeyManagerFactoryMutualAuth();
+        super.testSessionAfterHandshakeKeyManagerFactoryMutualAuth(param);
     }
 
     @Override
@@ -122,53 +118,70 @@ public class OpenSslJdkSslEngineInteroptTest extends SSLEngineTest {
         return super.mySetupMutualAuthServerIsValidServerException(cause) || causedBySSLException(cause);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    public void testHandshakeSession() throws Exception {
+    public void testHandshakeSession(SSLEngineTestParam param) throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testHandshakeSession();
+        super.testHandshakeSession(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testSupportedSignatureAlgorithms() throws Exception {
+    public void testSupportedSignatureAlgorithms(SSLEngineTestParam param) throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testSupportedSignatureAlgorithms();
+        super.testSupportedSignatureAlgorithms(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testSessionLocalWhenNonMutualWithKeyManager() throws Exception {
+    public void testSessionLocalWhenNonMutualWithKeyManager(SSLEngineTestParam param) throws Exception {
         checkShouldUseKeyManagerFactory();
-        super.testSessionLocalWhenNonMutualWithKeyManager();
+        super.testSessionLocalWhenNonMutualWithKeyManager(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    public void testSessionLocalWhenNonMutualWithoutKeyManager() throws Exception {
+    public void testSessionLocalWhenNonMutualWithoutKeyManager(SSLEngineTestParam param) throws Exception {
         // This only really works when the KeyManagerFactory is supported as otherwise we not really know when
         // we need to provide a cert.
         assumeTrue(OpenSsl.supportsKeyManagerFactory());
-        super.testSessionLocalWhenNonMutualWithoutKeyManager();
+        super.testSessionLocalWhenNonMutualWithoutKeyManager(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testSessionCache() throws Exception {
+    public void testSessionCache(SSLEngineTestParam param) throws Exception {
         assumeTrue(OpenSsl.isSessionCacheSupported());
-        super.testSessionCache();
+        super.testSessionCache(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testSessionCacheTimeout() throws Exception {
+    public void testSessionCacheTimeout(SSLEngineTestParam param) throws Exception {
         assumeTrue(OpenSsl.isSessionCacheSupported());
-        super.testSessionCacheTimeout();
+        super.testSessionCacheTimeout(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
     @Override
-    @Test
-    public void testSessionCacheSize() throws Exception {
+    public void testSessionCacheSize(SSLEngineTestParam param) throws Exception {
         assumeTrue(OpenSsl.isSessionCacheSupported());
-        super.testSessionCacheSize();
+        super.testSessionCacheSize(param);
+    }
+
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Override
+    public void testRSASSAPSS(SSLEngineTestParam param) throws Exception {
+        checkShouldUseKeyManagerFactory();
+        super.testRSASSAPSS(param);
     }
 
     @Override
@@ -178,9 +191,9 @@ public class OpenSslJdkSslEngineInteroptTest extends SSLEngineTest {
 
     @SuppressWarnings("deprecation")
     @Override
-    protected SslContext wrapContext(SslContext context) {
-        if (context instanceof OpenSslContext) {
-            ((OpenSslContext) context).setUseTasks(useTasks);
+    protected SslContext wrapContext(SSLEngineTestParam param, SslContext context) {
+        if (context instanceof OpenSslContext && param instanceof OpenSslEngineTestParam) {
+            ((OpenSslContext) context).setUseTasks(((OpenSslEngineTestParam) param).useTasks);
             // Explicit enable the session cache as its disabled by default on the client side.
             ((OpenSslContext) context).sessionContext().setSessionCacheEnabled(true);
         }

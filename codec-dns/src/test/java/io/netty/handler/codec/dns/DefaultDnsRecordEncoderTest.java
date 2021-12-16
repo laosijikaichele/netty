@@ -21,11 +21,11 @@ import io.netty.channel.socket.InternetProtocolFamily;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.SocketUtils;
 import io.netty.util.internal.StringUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DefaultDnsRecordEncoderTest {
 
@@ -97,7 +97,7 @@ public class DefaultDnsRecordEncoderTest {
             // Pad the leftover of the last byte with zeros.
             int idx = addressPart.writerIndex() - 1;
             byte lastByte = addressPart.getByte(idx);
-            int paddingMask = ~((1 << (8 - lowOrderBitsToPreserve)) - 1);
+            int paddingMask = -1 << 8 - lowOrderBitsToPreserve;
             addressPart.setByte(idx, lastByte & paddingMask);
         }
 

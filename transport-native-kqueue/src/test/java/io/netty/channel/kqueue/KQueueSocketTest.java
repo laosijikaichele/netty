@@ -19,15 +19,17 @@ import io.netty.channel.unix.DomainSocketAddress;
 import io.netty.channel.unix.PeerCredentials;
 import io.netty.channel.unix.tests.SocketTest;
 import io.netty.channel.unix.tests.UnixTestUtils;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KQueueSocketTest extends SocketTest<BsdSocket> {
-    @BeforeClass
+    @BeforeAll
     public static void loadJNI() {
         KQueue.ensureAvailability();
     }
@@ -38,7 +40,7 @@ public class KQueueSocketTest extends SocketTest<BsdSocket> {
         BsdSocket s2 = BsdSocket.newSocketDomain();
 
         try {
-            DomainSocketAddress dsa = UnixTestUtils.newSocketAddress();
+            DomainSocketAddress dsa = UnixTestUtils.newDomainSocketAddress();
             s1.bind(dsa);
             s1.listen(1);
 
@@ -59,7 +61,7 @@ public class KQueueSocketTest extends SocketTest<BsdSocket> {
         BsdSocket s2 = BsdSocket.newSocketDomain();
 
         try {
-            DomainSocketAddress dsa = UnixTestUtils.newSocketAddress();
+            DomainSocketAddress dsa = UnixTestUtils.newDomainSocketAddress();
             s1.bind(dsa);
             s1.listen(1);
 

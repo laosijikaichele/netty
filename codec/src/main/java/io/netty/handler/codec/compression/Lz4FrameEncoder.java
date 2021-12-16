@@ -23,10 +23,10 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.ChannelPromise;
-import io.netty.channel.ChannelPromiseNotifier;
 import io.netty.handler.codec.EncoderException;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.util.concurrent.EventExecutor;
+import io.netty.util.concurrent.PromiseNotifier;
 import io.netty.util.internal.ObjectUtil;
 import net.jpountz.lz4.LZ4Compressor;
 import net.jpountz.lz4.LZ4Exception;
@@ -280,7 +280,7 @@ public class Lz4FrameEncoder extends MessageToByteEncoder<ByteBuf> {
         if (compressedLength >= flushableBytes) {
             blockType = BLOCK_TYPE_NON_COMPRESSED;
             compressedLength = flushableBytes;
-            out.setBytes(idx + HEADER_LENGTH, buffer, 0, flushableBytes);
+            out.setBytes(idx + HEADER_LENGTH, buffer, buffer.readerIndex(), flushableBytes);
         } else {
             blockType = BLOCK_TYPE_COMPRESSED;
         }
@@ -315,6 +315,7 @@ public class Lz4FrameEncoder extends MessageToByteEncoder<ByteBuf> {
                 compressor.maxCompressedLength(buffer.readableBytes()) + HEADER_LENGTH);
         flushBufferedData(footer);
 
+        footer.ensureWritable(HEADER_LENGTH);
         final int idx = footer.writerIndex();
         footer.setLong(idx, MAGIC_NUMBER);
         footer.setByte(idx + TOKEN_OFFSET, (byte) (BLOCK_TYPE_NON_COMPRESSED | compressionLevel));
@@ -358,7 +359,7 @@ public class Lz4FrameEncoder extends MessageToByteEncoder<ByteBuf> {
                 @Override
                 public void run() {
                     ChannelFuture f = finishEncode(ctx(), promise);
-                    f.addListener(new ChannelPromiseNotifier(promise));
+                    PromiseNotifier.cascade(f, promise);
                 }
             });
             return promise;

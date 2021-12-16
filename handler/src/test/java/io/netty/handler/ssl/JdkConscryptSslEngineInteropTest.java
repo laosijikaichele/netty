@@ -17,39 +17,22 @@ package io.netty.handler.ssl;
 
 import java.security.Provider;
 
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLSessionContext;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
-import static org.junit.Assume.assumeTrue;
-
-@RunWith(Parameterized.class)
+@DisabledIf("checkConscryptDisabled")
 public class JdkConscryptSslEngineInteropTest extends SSLEngineTest {
 
-    @Parameterized.Parameters(name = "{index}: bufferType = {0}, combo = {1}, delegate = {2}")
-    public static Collection<Object[]> data() {
-        List<Object[]> params = new ArrayList<Object[]>();
-        for (BufferType type: BufferType.values()) {
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), false });
-            params.add(new Object[] { type, ProtocolCipherCombo.tlsv12(), true });
-        }
-        return params;
+    static boolean checkConscryptDisabled() {
+        return !Conscrypt.isAvailable();
     }
 
-    public JdkConscryptSslEngineInteropTest(BufferType type, ProtocolCipherCombo combo, boolean delegate) {
-        super(type, combo, delegate);
-    }
-
-    @BeforeClass
-    public static void checkConscrypt() {
-        assumeTrue(Conscrypt.isAvailable());
+    public JdkConscryptSslEngineInteropTest() {
+        super(false);
     }
 
     @Override
@@ -67,18 +50,22 @@ public class JdkConscryptSslEngineInteropTest extends SSLEngineTest {
         return Java8SslTestUtils.conscryptProvider();
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled("TODO: Make this work with Conscrypt")
     @Override
-    @Test
-    @Ignore("TODO: Make this work with Conscrypt")
-    public void testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth() throws Exception {
-        super.testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth();
+    public void testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth(SSLEngineTestParam param)
+            throws Exception {
+        super.testMutualAuthValidClientCertChainTooLongFailOptionalClientAuth(param);
     }
 
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled("TODO: Make this work with Conscrypt")
     @Override
-    @Test
-    @Ignore("TODO: Make this work with Conscrypt")
-    public void testMutualAuthValidClientCertChainTooLongFailRequireClientAuth() throws Exception {
-        super.testMutualAuthValidClientCertChainTooLongFailRequireClientAuth();
+    public void testMutualAuthValidClientCertChainTooLongFailRequireClientAuth(SSLEngineTestParam param)
+            throws Exception {
+        super.testMutualAuthValidClientCertChainTooLongFailRequireClientAuth(param);
     }
 
     @Override
@@ -87,9 +74,11 @@ public class JdkConscryptSslEngineInteropTest extends SSLEngineTest {
         return super.mySetupMutualAuthServerIsValidClientException(cause) || causedBySSLException(cause);
     }
 
-    @Ignore("Ignore due bug in Conscrypt")
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled("Ignore due bug in Conscrypt")
     @Override
-    public void testHandshakeSession() throws Exception {
+    public void testHandshakeSession(SSLEngineTestParam param) throws Exception {
         // Ignore as Conscrypt does not correctly return the local certificates while the TrustManager is invoked.
         // See https://github.com/google/conscrypt/issues/634
     }
@@ -99,9 +88,18 @@ public class JdkConscryptSslEngineInteropTest extends SSLEngineTest {
         // Not supported by conscrypt
     }
 
-    @Ignore("Possible Conscrypt bug")
-    public void testSessionCacheTimeout() {
+    @MethodSource("newTestParams")
+    @ParameterizedTest
+    @Disabled("Possible Conscrypt bug")
+    @Override
+    public void testSessionCacheTimeout(SSLEngineTestParam param) {
         // Skip
         // https://github.com/google/conscrypt/issues/851
+    }
+
+    @Disabled("Not supported")
+    @Override
+    public void testRSASSAPSS(SSLEngineTestParam param) {
+        // skip
     }
 }

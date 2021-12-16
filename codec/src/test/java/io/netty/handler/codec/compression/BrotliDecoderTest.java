@@ -21,29 +21,26 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.FromDataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
-import org.junit.runner.RunWith;
+import io.netty.util.internal.PlatformDependent;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.condition.DisabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(Theories.class)
+@DisabledIf(value = "isNotSupported", disabledReason = "Brotli is not supported on this platform")
 public class BrotliDecoderTest {
 
     private static final Random RANDOM;
     private static final byte[] BYTES_SMALL = new byte[256];
     private static final byte[] BYTES_LARGE = new byte[256 * 1024];
-    private static final ByteBuf WRAPPED_BYTES_SMALL;
-    private static final ByteBuf WRAPPED_BYTES_LARGE;
     private static final byte[] COMPRESSED_BYTES_SMALL;
     private static final byte[] COMPRESSED_BYTES_LARGE;
 
@@ -53,13 +50,20 @@ public class BrotliDecoderTest {
             RANDOM = new Random();
             fillArrayWithCompressibleData(BYTES_SMALL);
             fillArrayWithCompressibleData(BYTES_LARGE);
-            WRAPPED_BYTES_SMALL = Unpooled.wrappedBuffer(BYTES_SMALL);
-            WRAPPED_BYTES_LARGE = Unpooled.wrappedBuffer(BYTES_LARGE);
             COMPRESSED_BYTES_SMALL = compress(BYTES_SMALL);
             COMPRESSED_BYTES_LARGE = compress(BYTES_LARGE);
         } catch (Throwable throwable) {
             throw new ExceptionInInitializerError(throwable);
         }
+    }
+
+    private static final ByteBuf WRAPPED_BYTES_SMALL = Unpooled.unreleasableBuffer(
+            Unpooled.wrappedBuffer(BYTES_SMALL)).asReadOnly();
+    private static final ByteBuf WRAPPED_BYTES_LARGE = Unpooled.unreleasableBuffer(
+            Unpooled.wrappedBuffer(BYTES_LARGE)).asReadOnly();
+
+    static boolean isNotSupported() {
+        return PlatformDependent.isOsx() && "aarch_64".equals(PlatformDependent.normalizedArch());
     }
 
     private static void fillArrayWithCompressibleData(byte[] array) {
@@ -78,12 +82,12 @@ public class BrotliDecoderTest {
 
     private EmbeddedChannel channel;
 
-    @Before
+    @BeforeEach
     public void initChannel() {
         channel = new EmbeddedChannel(new BrotliDecoder());
     }
 
-    @After
+    @AfterEach
     public void destroyChannel() {
         if (channel != null) {
             channel.finishAndReleaseAll();
@@ -91,7 +95,6 @@ public class BrotliDecoderTest {
         }
     }
 
-    @DataPoints("smallData")
     public static ByteBuf[] smallData() {
         ByteBuf heap = Unpooled.wrappedBuffer(COMPRESSED_BYTES_SMALL);
         ByteBuf direct = Unpooled.directBuffer(COMPRESSED_BYTES_SMALL.length);
@@ -99,7 +102,6 @@ public class BrotliDecoderTest {
         return new ByteBuf[]{heap, direct};
     }
 
-    @DataPoints("largeData")
     public static ByteBuf[] largeData() {
         ByteBuf heap = Unpooled.wrappedBuffer(COMPRESSED_BYTES_LARGE);
         ByteBuf direct = Unpooled.directBuffer(COMPRESSED_BYTES_LARGE.length);
@@ -107,18 +109,21 @@ public class BrotliDecoderTest {
         return new ByteBuf[]{heap, direct};
     }
 
-    @Theory
-    public void testDecompressionOfSmallChunkOfData(@FromDataPoints("smallData") ByteBuf data) {
-        testDecompression(WRAPPED_BYTES_SMALL, data);
+    @ParameterizedTest
+    @MethodSource("smallData")
+    public void testDecompressionOfSmallChunkOfData(ByteBuf data) {
+        testDecompression(WRAPPED_BYTES_SMALL.duplicate(), data);
     }
 
-    @Theory
-    public void testDecompressionOfLargeChunkOfData(@FromDataPoints("largeData") ByteBuf data) {
-        testDecompression(WRAPPED_BYTES_LARGE, data);
+    @ParameterizedTest
+    @MethodSource("largeData")
+    public void testDecompressionOfLargeChunkOfData(ByteBuf data) {
+        testDecompression(WRAPPED_BYTES_LARGE.duplicate(), data);
     }
 
-    @Theory
-    public void testDecompressionOfBatchedFlowOfData(@FromDataPoints("largeData") ByteBuf data) {
+    @ParameterizedTest
+    @MethodSource("largeData")
+    public void testDecompressionOfBatchedFlowOfData(ByteBuf data) {
         testDecompressionOfBatchedFlow(WRAPPED_BYTES_LARGE, data);
     }
 
@@ -131,7 +136,7 @@ public class BrotliDecoderTest {
         decompressed.release();
     }
 
-  private void testDecompressionOfBatchedFlow(final ByteBuf expected, final ByteBuf data) {
+    private void testDecompressionOfBatchedFlow(final ByteBuf expected, final ByteBuf data) {
         final int compressedLength = data.readableBytes();
         int written = 0, length = RANDOM.nextInt(100);
         while (written + length < compressedLength) {
@@ -150,7 +155,7 @@ public class BrotliDecoderTest {
         data.release();
     }
 
-  private static ByteBuf readDecompressed(final EmbeddedChannel channel) {
+    private static ByteBuf readDecompressed(final EmbeddedChannel channel) {
         CompositeByteBuf decompressed = Unpooled.compositeBuffer();
         ByteBuf msg;
         while ((msg = channel.readInbound()) != null) {

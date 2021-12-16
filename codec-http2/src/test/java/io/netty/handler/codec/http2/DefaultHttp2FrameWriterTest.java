@@ -15,7 +15,6 @@
 package io.netty.handler.codec.http2;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
@@ -25,9 +24,9 @@ import io.netty.channel.ChannelPromise;
 import io.netty.channel.DefaultChannelPromise;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.ImmediateEventExecutor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.invocation.InvocationOnMock;
@@ -37,7 +36,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 /**
@@ -63,7 +63,7 @@ public class DefaultHttp2FrameWriterTest {
     @Mock
     private ChannelHandlerContext ctx;
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         http2HeadersEncoder = new DefaultHttp2HeadersEncoder(
@@ -96,7 +96,7 @@ public class DefaultHttp2FrameWriterTest {
         when(ctx.executor()).thenReturn(ImmediateEventExecutor.INSTANCE);
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         outbound.release();
         expectedOutbound.release();
@@ -160,8 +160,28 @@ public class DefaultHttp2FrameWriterTest {
         assertEquals(expectedOutbound, outbound);
     }
 
+    @Test
+    public void writeEmptyDataWithPadding() {
+        int streamId = 1;
+
+        ByteBuf payloadByteBuf = Unpooled.buffer();
+        frameWriter.writeData(ctx, streamId, payloadByteBuf, 2, true, promise);
+
+        assertEquals(0, payloadByteBuf.refCnt());
+
+        byte[] expectedFrameBytes = {
+            (byte) 0x00, (byte) 0x00, (byte) 0x02, // payload length
+            (byte) 0x00, // payload type
+            (byte) 0x09, // flags
+            (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x01, // stream id
+            (byte) 0x01, (byte) 0x00, // padding
+        };
+        expectedOutbound = Unpooled.copiedBuffer(expectedFrameBytes);
+        assertEquals(expectedOutbound, outbound);
+    }
+
     /**
-     * Test large headers that exceed {@link DefaultHttp2FrameWriter#maxFrameSize}
+     * Test large headers that exceed {@link DefaultHttp2FrameWriter#maxFrameSize()}
      * the remaining headers will be sent in a CONTINUATION frame
      */
     @Test
