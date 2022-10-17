@@ -255,11 +255,11 @@ public class FastThreadLocalTest {
         int nextIndex_before = nextIndex.get();
         try {
             while (nextIndex.get() < ARRAY_LIST_CAPACITY_MAX_SIZE) {
-                new FastThreadLocal<Boolean>();
+                new FastThreadLocal<Boolean>().get();
             }
             assertEquals(ARRAY_LIST_CAPACITY_MAX_SIZE - 1, InternalThreadLocalMap.lastVariableIndex());
             try {
-                new FastThreadLocal<Boolean>();
+                new FastThreadLocal<Boolean>().get();
             } catch (Throwable t) {
                 // assert the max index cannot greater than (ARRAY_LIST_CAPACITY_MAX_SIZE - 1)
                 assertThat(t, is(instanceOf(IllegalStateException.class)));

@@ -122,10 +122,12 @@ public class FastThreadLocal<V> {
         variablesToRemove.remove(variable);
     }
 
-    private final int index;
+    private int index;
 
-    public FastThreadLocal() {
-        index = InternalThreadLocalMap.nextVariableIndex();
+    public FastThreadLocal() { }
+
+    private int initIndexAndGet() {
+        return index == 0 ? index = InternalThreadLocalMap.nextVariableIndex() : index;
     }
 
     /**
@@ -134,11 +136,12 @@ public class FastThreadLocal<V> {
     @SuppressWarnings("unchecked")
     public final V get() {
         InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
-        Object v = threadLocalMap.indexedVariable(index);
-        if (v != InternalThreadLocalMap.UNSET) {
-            return (V) v;
+        if (index > 0) {
+            Object v = threadLocalMap.indexedVariable(index);
+            if (v != InternalThreadLocalMap.UNSET) {
+                return (V) v;
+            }
         }
-
         return initialize(threadLocalMap);
     }
 
@@ -147,11 +150,13 @@ public class FastThreadLocal<V> {
      */
     @SuppressWarnings("unchecked")
     public final V getIfExists() {
-        InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.getIfSet();
-        if (threadLocalMap != null) {
-            Object v = threadLocalMap.indexedVariable(index);
-            if (v != InternalThreadLocalMap.UNSET) {
-                return (V) v;
+        if (index > 0) {
+            InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.getIfSet();
+            if (threadLocalMap != null) {
+                Object v = threadLocalMap.indexedVariable(index);
+                if (v != InternalThreadLocalMap.UNSET) {
+                    return (V) v;
+                }
             }
         }
         return null;
@@ -163,11 +168,12 @@ public class FastThreadLocal<V> {
      */
     @SuppressWarnings("unchecked")
     public final V get(InternalThreadLocalMap threadLocalMap) {
-        Object v = threadLocalMap.indexedVariable(index);
-        if (v != InternalThreadLocalMap.UNSET) {
-            return (V) v;
+        if (index > 0) {
+            Object v = threadLocalMap.indexedVariable(index);
+            if (v != InternalThreadLocalMap.UNSET) {
+                return (V) v;
+            }
         }
-
         return initialize(threadLocalMap);
     }
 
@@ -179,7 +185,7 @@ public class FastThreadLocal<V> {
             PlatformDependent.throwException(e);
         }
 
-        threadLocalMap.setIndexedVariable(index, v);
+        threadLocalMap.setIndexedVariable(initIndexAndGet(), v);
         addToVariablesToRemove(threadLocalMap, this);
         return v;
     }
@@ -211,7 +217,7 @@ public class FastThreadLocal<V> {
      * @see InternalThreadLocalMap#setIndexedVariable(int, Object).
      */
     private void setKnownNotUnset(InternalThreadLocalMap threadLocalMap, V value) {
-        if (threadLocalMap.setIndexedVariable(index, value)) {
+        if (threadLocalMap.setIndexedVariable(initIndexAndGet(), value)) {
             addToVariablesToRemove(threadLocalMap, this);
         }
     }
@@ -228,7 +234,7 @@ public class FastThreadLocal<V> {
      * The specified thread local map must be for the current thread.
      */
     public final boolean isSet(InternalThreadLocalMap threadLocalMap) {
-        return threadLocalMap != null && threadLocalMap.isIndexedVariableSet(index);
+        return index > 0 && threadLocalMap != null && threadLocalMap.isIndexedVariableSet(index);
     }
     /**
      * Sets the value to uninitialized for the specified thread local map.
@@ -245,7 +251,7 @@ public class FastThreadLocal<V> {
      */
     @SuppressWarnings("unchecked")
     public final void remove(InternalThreadLocalMap threadLocalMap) {
-        if (threadLocalMap == null) {
+        if (threadLocalMap == null || index == 0) {
             return;
         }
 
