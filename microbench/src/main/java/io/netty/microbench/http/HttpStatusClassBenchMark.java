@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(2)
 @Threads(1)
-@Measurement(iterations = 10, time = 1)
-@Warmup(iterations = 10, time = 1)
+@Warmup(iterations = 2)
+@Measurement(iterations = 2)
 public class HttpStatusClassBenchMark extends AbstractMicrobenchmark {
 
     @Param({ "1" })
@@ -42,7 +42,7 @@ public class HttpStatusClassBenchMark extends AbstractMicrobenchmark {
         result = new HttpStatusClass[size];
 
         for (int j = 0; j < size; j++) {
-            data[j] = (byte) random.nextInt(100, 700);
+            data[j] = random.nextInt(100, 700);
         }
     }
 
