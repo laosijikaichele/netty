@@ -1,5 +1,6 @@
 package io.netty.handler.codec.http;
 import io.netty.microbench.util.AbstractMicrobenchmark;
+import io.netty.util.internal.SuppressJava6Requirement;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Level;
@@ -11,6 +12,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.Random;
+import java.util.SplittableRandom;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
@@ -25,8 +27,9 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     public int size;
 
     @Setup(Level.Iteration)
+    @SuppressJava6Requirement(reason = "Suppress")
     public void setup() {
-        final Random random = new Random();
+        final SplittableRandom random = new SplittableRandom();
         data = new int[size];
         result = new HttpStatusClass[size];
         for (int j = 0; j < size; j++) {
