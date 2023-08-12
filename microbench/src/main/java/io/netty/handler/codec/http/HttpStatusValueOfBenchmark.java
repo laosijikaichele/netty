@@ -23,7 +23,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
 
     private int[] data;
     private HttpStatusClass[] result;
-    @Param({ "7", "16", "23", "32" })
+    @Param({ "25", "32", "63", "95" })
     public int size;
 
     @Setup(Level.Iteration)
