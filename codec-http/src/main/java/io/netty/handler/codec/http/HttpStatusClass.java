@@ -52,14 +52,24 @@ public enum HttpStatusClass {
         }
     };
 
-    private static final HttpStatusClass[] httpStatusClassAssay = new HttpStatusClass[5];
+    private static final HttpStatusClass[] httpStatusClassAssay = new HttpStatusClass[600];
 
     static {
-        httpStatusClassAssay[0] = INFORMATIONAL;
-        httpStatusClassAssay[1] = SUCCESS;
-        httpStatusClassAssay[2] = REDIRECTION;
-        httpStatusClassAssay[3] = CLIENT_ERROR;
-        httpStatusClassAssay[4] = SERVER_ERROR;
+        for (int i = 100; i <= 199; i ++) {
+            httpStatusClassAssay[i] = INFORMATIONAL;
+        }
+        for (int i = 200; i <= 299; i ++) {
+            httpStatusClassAssay[i] = SUCCESS;
+        }
+        for (int i = 300; i <= 399; i ++) {
+            httpStatusClassAssay[i] = REDIRECTION;
+        }
+        for (int i = 400; i <= 499; i ++) {
+            httpStatusClassAssay[i] = CLIENT_ERROR;
+        }
+        for (int i = 500; i <= 599; i ++) {
+            httpStatusClassAssay[i] = SERVER_ERROR;
+        }
     }
 
     /**
@@ -69,7 +79,7 @@ public enum HttpStatusClass {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
-        return httpStatusClassAssay[(code / 100) - 1];
+        return httpStatusClassAssay[code];
     }
 
     /**
