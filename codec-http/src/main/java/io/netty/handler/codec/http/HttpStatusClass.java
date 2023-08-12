@@ -52,6 +52,16 @@ public enum HttpStatusClass {
         }
     };
 
+    private static final HttpStatusClass[] httpStatusClassAssay = new HttpStatusClass[5];
+
+    static {
+        httpStatusClassAssay[0] = INFORMATIONAL;
+        httpStatusClassAssay[1] = SUCCESS;
+        httpStatusClassAssay[2] = REDIRECTION;
+        httpStatusClassAssay[3] = CLIENT_ERROR;
+        httpStatusClassAssay[4] = SERVER_ERROR;
+    }
+
     /**
      * Returns the class of the specified HTTP status code.
      */
@@ -59,20 +69,7 @@ public enum HttpStatusClass {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
-        switch (code / 100) {
-            // 1xx
-            case 1: return INFORMATIONAL;
-            // 2xx
-            case 2: return SUCCESS;
-            // 3xx
-            case 3: return REDIRECTION;
-            // 4xx
-            case 4: return CLIENT_ERROR;
-            // 5xx
-            case 5: return SERVER_ERROR;
-            // others
-            default: return UNKNOWN;
-        }
+        return httpStatusClassAssay[(code / 100) - 1];
     }
 
     /**
