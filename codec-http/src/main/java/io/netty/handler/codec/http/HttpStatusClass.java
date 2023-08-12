@@ -69,6 +69,7 @@ public enum HttpStatusClass {
 
         if (INFORMATIONAL.contains(code)) {
             return INFORMATIONAL;
+        }
         if (SUCCESS.contains(code)) {
             return SUCCESS;
         }
