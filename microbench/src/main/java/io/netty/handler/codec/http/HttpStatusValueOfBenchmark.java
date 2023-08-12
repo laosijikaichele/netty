@@ -30,6 +30,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     public int size;
 
     @Setup(Level.Iteration)
+    @SuppressJava6Requirement(reason = "using SplittableRandom to reliably produce data")
     public void setup() {
         final SplittableRandom random = new SplittableRandom();
         data = new int[size];
