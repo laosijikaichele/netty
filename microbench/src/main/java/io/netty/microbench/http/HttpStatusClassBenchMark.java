@@ -15,29 +15,25 @@ import org.openjdk.jmh.annotations.Warmup;
 import io.netty.handler.codec.http.*;
 import java.util.SplittableRandom;
 import java.util.concurrent.TimeUnit;
-@State(Scope.Benchmark)
+//@State(Scope.Benchmark)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @Fork(2)
 @Threads(1)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2)
+@Warmup(iterations = 2, time = 1)
+@Measurement(iterations = 2, time = 1)
 public class HttpStatusClassBenchMark extends AbstractMicrobenchmark {
 
-    @Param({ "1" })
-    public int seed;
     private int[] data;
 
     private HttpStatusClass[] result;
 
-    private int i;
-
     @Param({ "7", "23", "47", "97"})
     public int size;
 
-    @Setup(Level.Trial)
+    @Setup(Level.Invocation)
     @SuppressJava6Requirement(reason = "using SplittableRandom to reliably produce data")
     public void setup() {
-        final SplittableRandom random = new SplittableRandom(seed);
+        final SplittableRandom random = new SplittableRandom();
         data = new int[size];
         result = new HttpStatusClass[size];
 
