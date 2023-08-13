@@ -16,8 +16,8 @@ import java.util.SplittableRandom;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 3, time = 1)
-@Measurement(iterations = 3, time = 1)
+@Warmup(iterations = 10, time = 1)
+@Measurement(iterations = 20, time = 1)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
 
