@@ -52,15 +52,15 @@ public enum HttpStatusClass {
         }
     };
 
-    // private static final HttpStatusClass[] statusArray = new HttpStatusClass[5];
+     private static final HttpStatusClass[] statusArray = new HttpStatusClass[5];
 
-    // static {
-    //     statusArray[0] = INFORMATIONAL;
-    //     statusArray[1] = SUCCESS;
-    //     statusArray[2] = REDIRECTION;
-    //     statusArray[3] = CLIENT_ERROR;
-    //     statusArray[4] = SERVER_ERROR;
-    // }
+     static {
+         statusArray[0] = INFORMATIONAL;
+         statusArray[1] = SUCCESS;
+         statusArray[2] = REDIRECTION;
+         statusArray[3] = CLIENT_ERROR;
+         statusArray[4] = SERVER_ERROR;
+     }
 
     /**
      * Returns the class of the specified HTTP status code.
@@ -84,25 +84,25 @@ public enum HttpStatusClass {
         // }
         // return UNKNOWN;    
         
-        // if (UNKNOWN.contains(code)) {
-        //     return UNKNOWN;
-        // }
-        // return statusArray[(code / 100) - 1];
+         if (UNKNOWN.contains(code)) {
+             return UNKNOWN;
+         }
+         return statusArray[(code / 100) - 1];
         
-       switch (code / 100) {
-           // 1xx
-           case 1: return INFORMATIONAL;
-           // 2xx
-           case 2: return SUCCESS;
-           // 3xx
-           case 3: return REDIRECTION;
-           // 4xx
-           case 4: return CLIENT_ERROR;
-           // 5xx
-           case 5: return SERVER_ERROR;
-           // others
-           default: return UNKNOWN;
-       }
+//       switch (code / 100) {
+//           // 1xx
+//           case 1: return INFORMATIONAL;
+//           // 2xx
+//           case 2: return SUCCESS;
+//           // 3xx
+//           case 3: return REDIRECTION;
+//           // 4xx
+//           case 4: return CLIENT_ERROR;
+//           // 5xx
+//           case 5: return SERVER_ERROR;
+//           // others
+//           default: return UNKNOWN;
+//       }
     }
 
     /**
