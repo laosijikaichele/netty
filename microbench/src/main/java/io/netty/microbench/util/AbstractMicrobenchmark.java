@@ -64,7 +64,10 @@ public class AbstractMicrobenchmark extends AbstractMicrobenchmarkBase {
             customArgs = new String[]{"-Xms768m", "-Xmx768m", "-XX:MaxDirectMemorySize=768m",
                     "-XX:BiasedLockingStartupDelay=0",
                     "-Djmh.executor=CUSTOM",
-                    "-Djmh.executor.class=io.netty.microbench.util.AbstractMicrobenchmark$HarnessExecutor"};
+                    "-Djmh.executor.class=io.netty.microbench.util.AbstractMicrobenchmark$HarnessExecutor",
+                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf",
+                    "-XX:+UnlockDiagnosticVMOptions"
+            };
         }
         String[] jvmArgs = new String[BASE_JVM_ARGS.length + customArgs.length];
         System.arraycopy(BASE_JVM_ARGS, 0, jvmArgs, 0, BASE_JVM_ARGS.length);
