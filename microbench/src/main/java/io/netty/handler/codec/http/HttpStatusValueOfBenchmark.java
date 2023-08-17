@@ -42,7 +42,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private final DecimalFormat df = new DecimalFormat("#.00");
 
     @Setup(Level.Iteration)
-//    @SuppressJava6Requirement(reason = "suppress")
+    @SuppressJava6Requirement(reason = "suppress")
     public void setup(Blackhole bh) {
         final SplittableRandom random = new SplittableRandom();
         data = new int[size];
