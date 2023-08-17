@@ -65,9 +65,9 @@ public class AbstractMicrobenchmark extends AbstractMicrobenchmarkBase {
                     "-XX:BiasedLockingStartupDelay=0",
                     "-Djmh.executor=CUSTOM",
                     "-Djmh.executor.class=io.netty.microbench.util.AbstractMicrobenchmark$HarnessExecutor",
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf*",
-                    "-XX:+PrintInlining"
+//                    "-XX:+UnlockDiagnosticVMOptions",
+//                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf*",
+//                    "-XX:+PrintInlining"
 //                    "-XX:CompileCommand='option *HttpStatusClass::valueOf*'"
             };
         }
