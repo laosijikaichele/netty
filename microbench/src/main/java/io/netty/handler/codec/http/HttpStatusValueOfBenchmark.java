@@ -25,7 +25,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
-
+import io.netty.util.internal.SuppressJava6Requirement;
 import java.text.DecimalFormat;
 import java.util.SplittableRandom;
 import java.util.concurrent.TimeUnit;
