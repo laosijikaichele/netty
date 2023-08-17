@@ -52,57 +52,88 @@ public enum HttpStatusClass {
         }
     };
 
-     private static final HttpStatusClass[] statusArray = new HttpStatusClass[5];
+     private static final HttpStatusClass[] statusArray = new HttpStatusClass[6];
 
      static {
-         statusArray[0] = INFORMATIONAL;
-         statusArray[1] = SUCCESS;
-         statusArray[2] = REDIRECTION;
-         statusArray[3] = CLIENT_ERROR;
-         statusArray[4] = SERVER_ERROR;
+         statusArray[1] = INFORMATIONAL;
+         statusArray[2] = SUCCESS;
+         statusArray[3] = REDIRECTION;
+         statusArray[4] = CLIENT_ERROR;
+         statusArray[5] = SERVER_ERROR;
      }
 
     /**
      * Returns the class of the specified HTTP status code.
      */
     public static HttpStatusClass valueOf(int code) {
+        if (INFORMATIONAL.contains(code)) {
+            return INFORMATIONAL;
+        }
+        if (SUCCESS.contains(code)) {
+            return SUCCESS;
+        }
+        if (REDIRECTION.contains(code)) {
+            return REDIRECTION;
+        }
+        if (CLIENT_ERROR.contains(code)) {
+            return CLIENT_ERROR;
+        }
+        if (SERVER_ERROR.contains(code)) {
+            return SERVER_ERROR;
+        }
+        return UNKNOWN;
+    }
 
-        // if (INFORMATIONAL.contains(code)) {
-        //     return INFORMATIONAL;
-        // }
-        // if (SUCCESS.contains(code)) {
-        //     return SUCCESS;
-        // }
-        // if (REDIRECTION.contains(code)) {
-        //     return REDIRECTION;
-        // }
-        // if (CLIENT_ERROR.contains(code)) {
-        //     return CLIENT_ERROR;
-        // }
-        // if (SERVER_ERROR.contains(code)) {
-        //     return SERVER_ERROR;
-        // }
-        // return UNKNOWN;    
-        
-         if (UNKNOWN.contains(code)) {
-             return UNKNOWN;
-         }
-         return statusArray[(code / 100) - 1];
-        
-//       switch (code / 100) {
-//           // 1xx
-//           case 1: return INFORMATIONAL;
-//           // 2xx
-//           case 2: return SUCCESS;
-//           // 3xx
-//           case 3: return REDIRECTION;
-//           // 4xx
-//           case 4: return CLIENT_ERROR;
-//           // 5xx
-//           case 5: return SERVER_ERROR;
-//           // others
-//           default: return UNKNOWN;
-//       }
+    public static HttpStatusClass valueOfSwitchCase(int code) {
+        switch (code / 100) {
+            // 1xx
+            case 1: return INFORMATIONAL;
+            // 2xx
+            case 2: return SUCCESS;
+            // 3xx
+            case 3: return REDIRECTION;
+            // 4xx
+            case 4: return CLIENT_ERROR;
+            // 5xx
+            case 5: return SERVER_ERROR;
+            // others
+            default: return UNKNOWN;
+        }
+    }
+
+    public static HttpStatusClass valueOfSwitchCaseWithFastDiv(int code) {
+        if (code < 0) return UNKNOWN;
+        switch (fastDiv100(code)) {
+            // 1xx
+            case 1: return INFORMATIONAL;
+            // 2xx
+            case 2: return SUCCESS;
+            // 3xx
+            case 3: return REDIRECTION;
+            // 4xx
+            case 4: return CLIENT_ERROR;
+            // 5xx
+            case 5: return SERVER_ERROR;
+            // others
+            default: return UNKNOWN;
+        }
+    }
+
+    public static HttpStatusClass valueOfArrayIndexWithFastDiv(int code) {
+        if (UNKNOWN.contains(code)) {
+            return UNKNOWN;
+        }
+        return statusArray[fastDiv100(code)];
+    }
+
+    /**
+     * @param code MUST >= 0
+     * @return
+     */
+    private static int fastDiv100(int code) {
+        assert code >= 0;
+        // 0x51eb851f is hex of 1374389535L
+        return (int)((code * 1374389535L) >> 37);
     }
 
     /**
