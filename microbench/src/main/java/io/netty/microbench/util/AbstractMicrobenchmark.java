@@ -65,8 +65,8 @@ public class AbstractMicrobenchmark extends AbstractMicrobenchmarkBase {
                     "-XX:BiasedLockingStartupDelay=0",
                     "-Djmh.executor=CUSTOM",
                     "-Djmh.executor.class=io.netty.microbench.util.AbstractMicrobenchmark$HarnessExecutor",
-                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf",
-                    "-XX:+UnlockDiagnosticVMOptions"
+                    "-XX:+UnlockDiagnosticVMOptions",
+                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf*"
             };
         }
         String[] jvmArgs = new String[BASE_JVM_ARGS.length + customArgs.length];
