@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private int[] data;
     private HttpStatusClass[] result;
-    @Param({"32", "63", "121", "247", "519", "1021"})
+    @Param({"519", "1023", "2059", "3027"})
     public int size;
     private final DecimalFormat df = new DecimalFormat("#.00");
 
@@ -51,10 +51,12 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         int[] data_switchCase = new int[equalDistributedArraySize];
         int[] data_switchCaseWithFastDiv = new int[equalDistributedArraySize];
         int[] data_arrayIndexWithFastDiv = new int[equalDistributedArraySize];
+        int[] data_arrayIndexWithFastDivForceInline = new int[equalDistributedArraySize];
         initEqualDistributedData(data_ifElse, random);
         initEqualDistributedData(data_switchCase, random);
         initEqualDistributedData_switchCaseWithFastDiv(data_switchCaseWithFastDiv, random);
         initEqualDistributedData_arrayIndexWithFastDiv(data_arrayIndexWithFastDiv, random);
+        initEqualDistributedData_arrayIndexWithFastDiv(data_arrayIndexWithFastDivForceInline, random);
         for (int i = 0; i < data_ifElse.length; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOf(data_ifElse[i]);
             bh.consume(rs);
@@ -71,6 +73,10 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             HttpStatusClass rs = HttpStatusClass.valueOfArrayIndexWithFastDiv(data_arrayIndexWithFastDiv[i]);
             bh.consume(rs);
         }
+        for (int i = 0; i < data_arrayIndexWithFastDivForceInline.length; i++) {
+            HttpStatusClass rs = HttpStatusClass.valueOfArrayIndexWithFastDivForceInline(data_arrayIndexWithFastDivForceInline[i]);
+            bh.consume(rs);
+        }
 
         data = new int[size];
         result = new HttpStatusClass[size];
@@ -82,7 +88,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0;
         for (int i = 0; i < setUpData.length; i++) {
-            setUpData[i] = random.nextInt(0, 2);
+            setUpData[i] = random.nextInt(0, 6);
         }
         for (int i = 0; i < setUpData.length; i++) {
             // Code needs to be UNKNOWN
@@ -133,7 +139,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0, NEGATIVE_count = 0;
         for (int i = 0; i < setUpData.length; i++) {
-            setUpData[i] = random.nextInt(0, 2);
+            setUpData[i] = random.nextInt(0, 6);
         }
         for (int i = 0; i < setUpData.length; i++) {
             // Code needs to be negative
@@ -147,12 +153,10 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             int code = random.nextInt(100, 700);
             // If code is 'UNKNOWN'
             if (code >= 600) {
-                int unknownCode;
                 // The 'UNKNOWN' code random range: [0, 100) and [600, Integer.MAX_VALUE)
                 do {
-                    unknownCode = random.nextInt(0, Integer.MAX_VALUE);
-                } while (unknownCode >= 100 && unknownCode < 600);
-                code = unknownCode;
+                    code = random.nextInt(0, Integer.MAX_VALUE);
+                } while (code >= 100 && code < 600);
             }
             setUpData[i] = code;
             if (HttpStatusClass.INFORMATIONAL.contains(code)) {
@@ -312,29 +316,29 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length));
     }
 
-    @Benchmark
-    public HttpStatusClass[] valueOf() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOf(data[i]);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public HttpStatusClass[] valueOfSwitchCase() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOfSwitchCase(data[i]);
-        }
-        return result;
-    }
-
-    @Benchmark
-    public HttpStatusClass[] valueOfSwitchCaseWithFastDiv() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDiv(data[i]);
-        }
-        return result;
-    }
+//    @Benchmark
+//    public HttpStatusClass[] valueOf() {
+//        for (int i = 0; i < size; ++i) {
+//            result[i] = HttpStatusClass.valueOf(data[i]);
+//        }
+//        return result;
+//    }
+//
+//    @Benchmark
+//    public HttpStatusClass[] valueOfSwitchCase() {
+//        for (int i = 0; i < size; ++i) {
+//            result[i] = HttpStatusClass.valueOfSwitchCase(data[i]);
+//        }
+//        return result;
+//    }
+//
+//    @Benchmark
+//    public HttpStatusClass[] valueOfSwitchCaseWithFastDiv() {
+//        for (int i = 0; i < size; ++i) {
+//            result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDiv(data[i]);
+//        }
+//        return result;
+//    }
 
     @Benchmark
     public HttpStatusClass[] valueOfArrayIndexWithFastDiv() {
