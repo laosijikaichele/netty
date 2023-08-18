@@ -84,6 +84,9 @@ public enum HttpStatusClass {
         return UNKNOWN;
     }
 
+    /**
+     * This method is for benchmark comparison, will be removed after test done.
+     */
     public static HttpStatusClass valueOfSwitchCase(int code) {
         switch (code / 100) {
             // 1xx
@@ -101,6 +104,9 @@ public enum HttpStatusClass {
         }
     }
 
+    /**
+     * This method is for benchmark comparison, will be removed after test done.
+     */
     public static HttpStatusClass valueOfSwitchCaseWithFastDiv(int code) {
         if (code < 0) return UNKNOWN;
         switch (fastDiv100(code)) {
@@ -119,6 +125,9 @@ public enum HttpStatusClass {
         }
     }
 
+    /**
+     * This method is for benchmark comparison, will be removed after test done.
+     */
     public static HttpStatusClass valueOfArrayIndexWithFastDiv(int code) {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
