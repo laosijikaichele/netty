@@ -131,7 +131,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
                 + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
                 + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length)
-        );
+                + "%");
     }
 
     @SuppressJava6Requirement(reason = "suppress")
@@ -187,7 +187,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
                 + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length)
                 + "%, Negative:" + df.format((NEGATIVE_count * 100.0f) / setUpData.length)
-        );
+                + "%");
     }
 
     @SuppressJava6Requirement(reason = "suppress")
@@ -233,7 +233,8 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
                 + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
                 + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
-                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length));
+                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length)
+                + "%");
     }
 
     /**
@@ -313,7 +314,8 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
                 + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
                 + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
-                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length));
+                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length)
+                + "%");
     }
 
 //    @Benchmark
