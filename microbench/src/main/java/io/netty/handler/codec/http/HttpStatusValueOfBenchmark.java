@@ -350,11 +350,5 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         }
         return result;
     }
-    @Benchmark
-    public HttpStatusClass[] valueOfArrayIndexWithFastDivForceInline() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOfArrayIndexWithFastDivForceInline(data[i]);
-        }
-        return result;
-    }
 }
+

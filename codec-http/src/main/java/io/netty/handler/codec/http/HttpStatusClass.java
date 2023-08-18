@@ -135,13 +135,6 @@ public enum HttpStatusClass {
         return statusArray[fastDiv100(code)];
     }
 
-    public static HttpStatusClass valueOfArrayIndexWithFastDivForceInline(int code) {
-        if (code < 100 || code >= 600) {
-            return UNKNOWN;
-        }
-        return statusArray[fastDiv100(code)];
-    }
-
     /**
      * @param code MUST >= 0
      * @return
