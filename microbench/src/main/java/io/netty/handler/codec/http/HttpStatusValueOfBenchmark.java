@@ -74,7 +74,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
 
         data = new int[size];
         result = new HttpStatusClass[size];
-        initEqualDistributedData(data, random);
+        initBenchmarkDistributedData(data, random);
     }
 
     @SuppressJava6Requirement(reason = "suppress")
@@ -224,6 +224,86 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         }
         // Print the percentage of each code type:
         System.out.println("\ninitEqualDistributedData===>"
+                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length));
+    }
+
+    /**
+     * Http code distribution:
+     * INFORMATIONAL:35%, SUCCESS:24%, REDIRECTION:19%, CLIENT_ERROR:14%, SERVER_ERROR:6%, UNKNOWN:2%
+     * This distribution is optimized for 'if else' code of 4.1 branch.
+     */
+    @SuppressJava6Requirement(reason = "suppress")
+    private void initBenchmarkDistributedData(int[] setUpData, SplittableRandom random) {
+        int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
+                SERVER_ERROR_count = 0, UNKNOWN_count = 0;
+
+        int informational_CodeCount = (int) (setUpData.length * 0.35);
+        int success_CodeCount = (int) (setUpData.length * 0.24);
+        int redirection_CodeCount = (int) (setUpData.length * 0.19);
+        int clientError_CodeCount = (int) (setUpData.length * 0.14);
+        int serverError_CodeCount = (int) (setUpData.length * 0.06);
+        int unknown_CodeCount = (int) (setUpData.length * 0.02);
+
+        int i = 0;
+        while (i < setUpData.length &&
+                (informational_CodeCount + success_CodeCount + redirection_CodeCount +
+                clientError_CodeCount + serverError_CodeCount + unknown_CodeCount) > 0) {
+            int code = random.nextInt(100, 700);
+            if (HttpStatusClass.INFORMATIONAL.contains(code) && informational_CodeCount-- > 0) {
+                setUpData[i++] = code;
+                ++INFORMATIONAL_count;
+                continue;
+            }
+            if (HttpStatusClass.SUCCESS.contains(code) && success_CodeCount-- > 0) {
+                setUpData[i++] = code;
+                ++SUCCESS_count;
+                continue;
+            }
+            if (HttpStatusClass.REDIRECTION.contains(code) && redirection_CodeCount-- > 0) {
+                setUpData[i++] = code;
+                ++REDIRECTION_count;
+                continue;
+            }
+            if (HttpStatusClass.CLIENT_ERROR.contains(code) && clientError_CodeCount-- > 0) {
+                setUpData[i++] = code;
+                ++CLIENT_ERROR_count;
+            }
+            if (HttpStatusClass.SERVER_ERROR.contains(code) && serverError_CodeCount-- > 0) {
+                setUpData[i++] = code;
+                ++SERVER_ERROR_count;
+                continue;
+            }
+            if (HttpStatusClass.UNKNOWN.contains(code) && unknown_CodeCount-- > 0) {
+                setUpData[i++] = code;
+                ++UNKNOWN_count;
+            }
+        }
+        while (i < setUpData.length) {
+            // Fill INFORMATIONAL
+            int code = random.nextInt(100, 200);
+            setUpData[i++] = code;
+            ++ INFORMATIONAL_count;
+        }
+
+        for (int j = 0; j < setUpData.length; j++) {
+            // The code random range: [100, 700)
+            int code = setUpData[j];
+            // If code is 'UNKNOWN'
+            if (code >= 600) {
+                // The 'UNKNOWN' code random range: [Integer.MIN_VALUE, 100) and [600, Integer.MAX_VALUE]
+                do {
+                    code = random.nextInt();
+                } while (code >= 100 && code < 600);
+            }
+            setUpData[j] = code;
+        }
+        // Print the percentage of each code type:
+        System.out.println("\ninitBenchmarkDistributedData===>"
                 +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / setUpData.length)
                 + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / setUpData.length)
                 + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
