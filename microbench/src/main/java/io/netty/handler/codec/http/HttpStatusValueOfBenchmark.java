@@ -62,6 +62,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         initData_valueOfArrayIndexWithFastDiv(data_valueOfArrayIndexWithFastDiv, random);
     }
 
+    @SuppressJava6Requirement(reason = "suppress")
     private void initData_valueOfArrayIndexWithFastDiv(int[] data, SplittableRandom random) {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0;
@@ -112,6 +113,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         );
     }
 
+    @SuppressJava6Requirement(reason = "suppress")
     private void initData_valueOfSwitchCaseWithFastDiv(int[] data, SplittableRandom random) {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0, NEGATIVE_count = 0;
@@ -169,6 +171,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         );
     }
 
+    @SuppressJava6Requirement(reason = "suppress")
     private void initData(int[] data, SplittableRandom random) {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0;
