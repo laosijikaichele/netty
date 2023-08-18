@@ -336,9 +336,25 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     }
 
     @Benchmark
+    public HttpStatusClass[] valueOfSwitchCaseWithFastDivInline() {
+        for (int i = 0; i < size; ++i) {
+            result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDivInline(data[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
     public HttpStatusClass[] valueOfSwitchCaseWithFastDiv() {
         for (int i = 0; i < size; ++i) {
             result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDiv(data[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public HttpStatusClass[] valueOfArrayIndexWithFastDivInline() {
+        for (int i = 0; i < size; ++i) {
+            result[i] = HttpStatusClass.valueOfArrayIndexWithFastDivInline(data[i]);
         }
         return result;
     }

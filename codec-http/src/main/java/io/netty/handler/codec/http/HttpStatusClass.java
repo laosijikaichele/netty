@@ -128,11 +128,42 @@ public enum HttpStatusClass {
     /**
      * This method is for benchmark comparison, will be removed after test done.
      */
+    public static HttpStatusClass valueOfSwitchCaseWithFastDivInline(int code) {
+        if (code < 0) return UNKNOWN;
+        switch ((int)((code * 1374389535L) >> 37)) {
+            // 1xx
+            case 1: return INFORMATIONAL;
+            // 2xx
+            case 2: return SUCCESS;
+            // 3xx
+            case 3: return REDIRECTION;
+            // 4xx
+            case 4: return CLIENT_ERROR;
+            // 5xx
+            case 5: return SERVER_ERROR;
+            // others
+            default: return UNKNOWN;
+        }
+    }
+
+    /**
+     * This method is for benchmark comparison, will be removed after test done.
+     */
     public static HttpStatusClass valueOfArrayIndexWithFastDiv(int code) {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
         return statusArray[fastDiv100(code)];
+    }
+
+    /**
+     * This method is for benchmark comparison, will be removed after test done.
+     */
+    public static HttpStatusClass valueOfArrayIndexWithFastDivInline(int code) {
+        if (UNKNOWN.contains(code)) {
+            return UNKNOWN;
+        }
+        return statusArray[(int)((code * 1374389535L) >> 37)];
     }
 
     /**
