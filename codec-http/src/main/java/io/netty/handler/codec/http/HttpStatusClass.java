@@ -53,7 +53,6 @@ public enum HttpStatusClass {
     };
 
      private static final HttpStatusClass[] statusArray = new HttpStatusClass[6];
-
      static {
          statusArray[1] = INFORMATIONAL;
          statusArray[2] = SUCCESS;
