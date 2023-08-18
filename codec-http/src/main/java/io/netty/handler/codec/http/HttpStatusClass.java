@@ -147,7 +147,7 @@ public enum HttpStatusClass {
      * @return
      */
     private static int fastDiv100(int code) {
-//        assert code >= 0;
+        assert code >= 0;
         // 0x51eb851f is hex of 1374389535L
         return (int)((code * 1374389535L) >> 37);
     }
