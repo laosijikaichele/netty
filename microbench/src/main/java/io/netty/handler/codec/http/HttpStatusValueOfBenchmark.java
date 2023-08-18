@@ -327,6 +327,90 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%");
     }
 
+    /**
+     * Http code distribution:
+     * INFORMATIONAL:2%, SUCCESS:6%, REDIRECTION:14%, CLIENT_ERROR:19%, SERVER_ERROR:24%, UNKNOWN:35%
+     * This distribution is reversed for 'if else' code of 4.1 branch.
+     */
+    @SuppressJava6Requirement(reason = "suppress")
+    private void initBenchmarkDistributedDataReverse(int[] setUpData, SplittableRandom random) {
+        int informationalCount = 0, successCount = 0, redirectionCount = 0, clientErrorCount = 0,
+                serverErrorCount = 0, unknownCount = 0;
+
+        int totalCount = 0;
+        int informationalDistributeCount = (int) (setUpData.length * 0.02);
+        totalCount += informationalDistributeCount;
+        int successDistributeCount = (int) (setUpData.length * 0.06);
+        totalCount += successDistributeCount;
+        int redirectionDistributeCount = (int) (setUpData.length * 0.14);
+        totalCount += redirectionDistributeCount;
+        int clientErrorDistributeCount = (int) (setUpData.length * 0.19);
+        totalCount += clientErrorDistributeCount;
+        int serverErrorDistributeCount = (int) (setUpData.length * 0.24);
+        totalCount += serverErrorDistributeCount;
+        int unknownDistributeCount = (int) (setUpData.length * 0.35);
+        totalCount += unknownDistributeCount;
+
+        if (totalCount < setUpData.length) {
+            serverErrorDistributeCount += setUpData.length - totalCount;
+        }
+
+        for (int i = 0; i < setUpData.length;) {
+            int code = random.nextInt(100, 700);
+            if (HttpStatusClass.INFORMATIONAL.contains(code) && informationalDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++informationalCount;
+                continue;
+            }
+            if (HttpStatusClass.SUCCESS.contains(code) && successDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++successCount;
+                continue;
+            }
+            if (HttpStatusClass.REDIRECTION.contains(code) && redirectionDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++redirectionCount;
+                continue;
+            }
+            if (HttpStatusClass.CLIENT_ERROR.contains(code) && clientErrorDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++clientErrorCount;
+            }
+            if (HttpStatusClass.SERVER_ERROR.contains(code) && serverErrorDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++serverErrorCount;
+                continue;
+            }
+            if (HttpStatusClass.UNKNOWN.contains(code) && unknownDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++unknownCount;
+            }
+        }
+
+        for (int j = 0; j < setUpData.length; j++) {
+            // The code random range: [100, 700)
+            int code = setUpData[j];
+            // If code is 'UNKNOWN'
+            if (code >= 600) {
+                do {
+                    // The 'UNKNOWN' code random range: [Integer.MIN_VALUE, 100) and [600, Integer.MAX_VALUE]
+                    code = random.nextInt();
+                } while (code >= 100 && code < 600);
+            }
+            setUpData[j] = code;
+        }
+        // Print the percentage of each code type:
+        DecimalFormat df = new DecimalFormat("#.00");
+        System.out.println("\ninitBenchmarkDistributedDataReverse===>"
+                +"INFORMATIONAL:" + df.format((informationalCount * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((successCount * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((redirectionCount * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((clientErrorCount * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((serverErrorCount * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((unknownCount * 100.0f) / setUpData.length)
+                + "%");
+    }
+
     @Benchmark
     public HttpStatusClass[] valueOf() {
         for (int i = 0; i < size; ++i) {
@@ -343,13 +427,13 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         return result;
     }
 
-    @Benchmark
-    public HttpStatusClass[] valueOfSwitchCaseWithFastDivInline() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDivInline(data[i]);
-        }
-        return result;
-    }
+//    @Benchmark
+//    public HttpStatusClass[] valueOfSwitchCaseWithFastDivInline() {
+//        for (int i = 0; i < size; ++i) {
+//            result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDivInline(data[i]);
+//        }
+//        return result;
+//    }
 
     @Benchmark
     public HttpStatusClass[] valueOfSwitchCaseWithFastDiv() {
@@ -367,13 +451,13 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         return result;
     }
 
-    @Benchmark
-    public HttpStatusClass[] valueOfArrayIndexWithFastDivInline() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOfArrayIndexWithFastDivInline(data[i]);
-        }
-        return result;
-    }
+//    @Benchmark
+//    public HttpStatusClass[] valueOfArrayIndexWithFastDivInline() {
+//        for (int i = 0; i < size; ++i) {
+//            result[i] = HttpStatusClass.valueOfArrayIndexWithFastDivInline(data[i]);
+//        }
+//        return result;
+//    }
 
     @Benchmark
     public HttpStatusClass[] valueOfArrayIndexWithFastDiv() {
