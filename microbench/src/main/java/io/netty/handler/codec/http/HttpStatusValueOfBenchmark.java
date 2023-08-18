@@ -49,6 +49,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     public void setup(Blackhole bh) {
         final SplittableRandom random = new SplittableRandom();
 
+        // Equal the branch predictor.
         int equalDistributedArraySize = 16000;
         int[] dataIfElse = new int[equalDistributedArraySize];
         int[] dataSwitchCase = new int[equalDistributedArraySize];
@@ -69,12 +70,19 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         for (int i = 0; i < dataSwitchCaseWithFastDiv.length; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOfSwitchCaseWithFastDiv(dataSwitchCaseWithFastDiv[i]);
             bh.consume(rs);
+            HttpStatusClass rs2 = HttpStatusClass.valueOfSwitchCaseWithFastDivInline(dataSwitchCaseWithFastDiv[i]);
+            bh.consume(rs2);
         }
         for (int i = 0; i < dataArrayIndexWithFastDiv.length; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOfArrayIndexWithFastDiv(dataArrayIndexWithFastDiv[i]);
+            HttpStatusClass rs = HttpStatusClass.valueOfArrayIndex(dataArrayIndexWithFastDiv[i]);
             bh.consume(rs);
+            HttpStatusClass rs1 = HttpStatusClass.valueOfArrayIndexWithFastDiv(dataArrayIndexWithFastDiv[i]);
+            bh.consume(rs1);
+            HttpStatusClass rs2 = HttpStatusClass.valueOfArrayIndexWithFastDivInline(dataArrayIndexWithFastDiv[i]);
+            bh.consume(rs2);
         }
 
+        // Generate bench mark data.
         data = new int[size];
         result = new HttpStatusClass[size];
         initBenchmarkDistributedData(data, random);
@@ -347,6 +355,14 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     public HttpStatusClass[] valueOfSwitchCaseWithFastDiv() {
         for (int i = 0; i < size; ++i) {
             result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDiv(data[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public HttpStatusClass[] valueOfArrayIndex() {
+        for (int i = 0; i < size; ++i) {
+            result[i] = HttpStatusClass.valueOfArrayIndex(data[i]);
         }
         return result;
     }
