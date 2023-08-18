@@ -47,38 +47,38 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         final SplittableRandom random = new SplittableRandom();
 
         int equalDistributedArraySize = 11000;
-        int[] data_valueOf = new int[equalDistributedArraySize];
-        int[] data_valueOfSwitchCase = new int[equalDistributedArraySize];
-        int[] data_valueOfSwitchCaseWithFastDiv = new int[equalDistributedArraySize];
-        int[] data_valueOfArrayIndexWithFastDiv = new int[equalDistributedArraySize];
-        initequalDistributedSetUpData(data_valueOf, random);
-        initequalDistributedSetUpData(data_valueOfSwitchCase, random);
-        initequalDistributedSetUpData_valueOfSwitchCaseWithFastDiv(data_valueOfSwitchCaseWithFastDiv, random);
-        initequalDistributedSetUpData_valueOfArrayIndexWithFastDiv(data_valueOfArrayIndexWithFastDiv, random);
-        for (int i = 0; i < data_valueOf.length; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOf(data_valueOf[i]);
+        int[] data_ifElse = new int[equalDistributedArraySize];
+        int[] data_switchCase = new int[equalDistributedArraySize];
+        int[] data_switchCaseWithFastDiv = new int[equalDistributedArraySize];
+        int[] data_arrayIndexWithFastDiv = new int[equalDistributedArraySize];
+        initEqualDistributedData(data_ifElse, random);
+        initEqualDistributedData(data_switchCase, random);
+        initEqualDistributedData_switchCaseWithFastDiv(data_switchCaseWithFastDiv, random);
+        initEqualDistributedData_arrayIndexWithFastDiv(data_arrayIndexWithFastDiv, random);
+        for (int i = 0; i < data_ifElse.length; i++) {
+            HttpStatusClass rs = HttpStatusClass.valueOf(data_ifElse[i]);
             bh.consume(rs);
         }
-        for (int i = 0; i < data_valueOfSwitchCase.length; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOfSwitchCase(data_valueOfSwitchCase[i]);
+        for (int i = 0; i < data_switchCase.length; i++) {
+            HttpStatusClass rs = HttpStatusClass.valueOfSwitchCase(data_switchCase[i]);
             bh.consume(rs);
         }
-        for (int i = 0; i < data_valueOfSwitchCaseWithFastDiv.length; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOfSwitchCaseWithFastDiv(data_valueOfSwitchCaseWithFastDiv[i]);
+        for (int i = 0; i < data_switchCaseWithFastDiv.length; i++) {
+            HttpStatusClass rs = HttpStatusClass.valueOfSwitchCaseWithFastDiv(data_switchCaseWithFastDiv[i]);
             bh.consume(rs);
         }
-        for (int i = 0; i < data_valueOfArrayIndexWithFastDiv.length; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOfArrayIndexWithFastDiv(data_valueOfArrayIndexWithFastDiv[i]);
+        for (int i = 0; i < data_arrayIndexWithFastDiv.length; i++) {
+            HttpStatusClass rs = HttpStatusClass.valueOfArrayIndexWithFastDiv(data_arrayIndexWithFastDiv[i]);
             bh.consume(rs);
         }
 
         data = new int[size];
         result = new HttpStatusClass[size];
-        initequalDistributedSetUpData(data, random);
+        initEqualDistributedData(data, random);
     }
 
     @SuppressJava6Requirement(reason = "suppress")
-    private void initequalDistributedSetUpData_valueOfArrayIndexWithFastDiv(int[] setUpData, SplittableRandom random) {
+    private void initEqualDistributedData_arrayIndexWithFastDiv(int[] setUpData, SplittableRandom random) {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0;
         for (int i = 0; i < setUpData.length; i++) {
@@ -118,28 +118,28 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             }
         }
         // Print the percentage of each code type:
-        System.out.println("\ninitSetUpData_valueOfArrayIndexWithFastDiv===>Code distribution===>"
-                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / size)
-                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / size)
-                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / size)
-                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / size)
-                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / size)
-                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / size)
+        System.out.println("\ninitEqualDistributedData_arrayIndexWithFastDiv===>"
+                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length)
         );
     }
 
     @SuppressJava6Requirement(reason = "suppress")
-    private void initequalDistributedSetUpData_valueOfSwitchCaseWithFastDiv(int[] setUpData, SplittableRandom random) {
+    private void initEqualDistributedData_switchCaseWithFastDiv(int[] setUpData, SplittableRandom random) {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0, NEGATIVE_count = 0;
         for (int i = 0; i < setUpData.length; i++) {
-            data[i] = random.nextInt(0, 2);
+            setUpData[i] = random.nextInt(0, 2);
         }
         for (int i = 0; i < setUpData.length; i++) {
             // Code needs to be negative
-            if (data[i] == 0) {
+            if (setUpData[i] == 0) {
                 // code range: [Integer.MIN_VALUE, 0)
-                data[i] = random.nextInt(Integer.MIN_VALUE, 0);
+                setUpData[i] = random.nextInt(Integer.MIN_VALUE, 0);
                 ++ NEGATIVE_count;
                 continue;
             }
@@ -175,19 +175,19 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             }
         }
         // Print the percentage of each code type:
-        System.out.println("\ninitSetUpData_valueOfSwitchCaseWithFastDiv===>Code distribution===>"
-                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / size)
-                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / size)
-                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / size)
-                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / size)
-                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / size)
-                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / size)
-                + "%, Negative:" + df.format((NEGATIVE_count * 100.0f) / size)
+        System.out.println("\ninitEqualDistributedData_switchCaseWithFastDiv===>"
+                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length)
+                + "%, Negative:" + df.format((NEGATIVE_count * 100.0f) / setUpData.length)
         );
     }
 
     @SuppressJava6Requirement(reason = "suppress")
-    private void initequalDistributedSetUpData(int[] setUpData, SplittableRandom random) {
+    private void initEqualDistributedData(int[] setUpData, SplittableRandom random) {
         int INFORMATIONAL_count = 0, SUCCESS_count = 0, REDIRECTION_count = 0, CLIENT_ERROR_count = 0,
                 SERVER_ERROR_count = 0, UNKNOWN_count = 0;
         for (int i = 0; i < setUpData.length; i++) {
@@ -223,13 +223,13 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             }
         }
         // Print the percentage of each code type:
-        System.out.println("\ninitSetUpData_valueOf===>Code distribution===>"
-                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / size)
-                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / size)
-                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / size)
-                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / size)
-                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / size)
-                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / size));
+        System.out.println("\ninitEqualDistributedData===>"
+                +"INFORMATIONAL:" + df.format((INFORMATIONAL_count * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((SUCCESS_count * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((REDIRECTION_count * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((CLIENT_ERROR_count * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((SERVER_ERROR_count * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((UNKNOWN_count * 100.0f) / setUpData.length));
     }
 
     @Benchmark
