@@ -26,6 +26,8 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import io.netty.util.internal.SuppressJava6Requirement;
+
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.SplittableRandom;
 import java.util.concurrent.TimeUnit;
@@ -39,7 +41,11 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private int[] data5Codes;
     private HttpStatusClass[] result;
     @Param({"519", "1023", "2059", "3027"})
-    public int size;
+    private int size;
+    private final BigDecimal bdZero = new BigDecimal("0.00");
+    private final BigDecimal bdOne = new BigDecimal("1.00");
+    private final BigDecimal bdLowest = new BigDecimal("0.01");
+    private final DecimalFormat df = new DecimalFormat("##.##%");
     public HttpStatusValueOfBenchmark() {
         // disable assertion
         super(true);
@@ -59,8 +65,10 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         int[] dataSwitchCaseWithFastDiv = new int[equalDistributedArraySize];
         int[] dataArrayIndexOnly5Codes = new int[equalDistributedArraySize];
         int[] dataArrayIndexWithFastDiv = new int[equalDistributedArraySize];
+
         initDistributedData("dataIfElse", dataIfElse, random, 0.166, 0.166, 0.166,
                 0.166, 0.166, 0.166, 0.0);
+
         initDistributedData("dataSwitchCase", dataSwitchCase, random, 0.166, 0.166, 0.166,
                 0.166, 0.166, 0.166, 0.0);
 
@@ -105,24 +113,29 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private void initDistributedData(String desc, int[] setUpData, SplittableRandom random, double informationalRatio,
                                      double successRatio, double redirectionRatio, double clientErrorRatio,
                                      double serverErrorRatio, double unknownRatio, double negativeRatio) {
-        double c1x = 0, c2x = 0, c3x = 0, c4x = 0, c5x = 0, c6x = 0, c7x = 0;
-        if (informationalRatio < 0.0 || successRatio < 0.0 || redirectionRatio < 0.0 || clientErrorRatio < 0.0
-                || serverErrorRatio < 0.0 || unknownRatio < 0.0 || negativeRatio < 0.0) {
-            throw new IllegalArgumentException("Every ratio MUST >= 0.0");
+        BigDecimal[] bdArray = {
+                BigDecimal.valueOf(informationalRatio),
+                BigDecimal.valueOf(successRatio),
+                BigDecimal.valueOf(redirectionRatio),
+                BigDecimal.valueOf(clientErrorRatio),
+                BigDecimal.valueOf(serverErrorRatio),
+                BigDecimal.valueOf(unknownRatio),
+                BigDecimal.valueOf(negativeRatio)
+        };
+        BigDecimal bdSum = new BigDecimal("0.00");
+        for (BigDecimal bdParam : bdArray) {
+            if (bdParam.compareTo(bdZero) < 0) {
+                throw new IllegalArgumentException("Ratio MUST NOT negative");
+            }
+            if (bdParam.compareTo(bdZero) > 0 && bdParam.compareTo(bdLowest) < 0) {
+                throw new IllegalArgumentException("If ratio != 0, then the ratio MUST >= 0.01");
+            }
+            bdSum = bdSum.add(bdParam);
         }
-        if (0.0 < informationalRatio && informationalRatio < 0.01
-                || 0.0 < successRatio && successRatio < 0.01
-                || 0.0 < redirectionRatio && redirectionRatio < 0.01
-                || 0.0 < clientErrorRatio && clientErrorRatio < 0.01
-                || 0.0 < serverErrorRatio && serverErrorRatio < 0.01
-                || 0.0 < unknownRatio && unknownRatio < 0.01
-                || 0.0 < negativeRatio && negativeRatio < 0.01) {
-            throw new IllegalArgumentException("If ratio > 0.0, then the ratio MUST >= 0.01");
-        }
-        if ((informationalRatio + successRatio + redirectionRatio + clientErrorRatio
-                + serverErrorRatio + unknownRatio + negativeRatio) > 1.0) {
+        if (bdSum.compareTo(bdOne) > 0) {
             throw new IllegalArgumentException("Sum of ratios MUST <= 1");
         }
+
         int totalCount = 0;
         int informationalCount = (int) (setUpData.length * informationalRatio);
         totalCount += informationalCount;
@@ -139,6 +152,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         int negativeCount = (int) (setUpData.length * negativeRatio);
         totalCount += negativeCount;
 
+        double c1x = 0, c2x = 0, c3x = 0, c4x = 0, c5x = 0, c6x = 0, c7x = 0;
         for (int i = 0; i < totalCount;) {
             // INFORMATIONAL:[100,200); SUCCESS:[200,300); REDIRECTION:[300,400);
             // CLIENT_ERROR:[400,500); SERVER_ERROR:[500,600); UNKNOWN:[600,700); Negative:[700,800)
@@ -165,7 +179,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             }
             // UNKNOWN code:
             if (code >= 600 && code < 700 && unknownCount-- > 0) {
-                int origin = negativeRatio > 0.0 ? 0 : Integer.MIN_VALUE;
+                int origin = BigDecimal.valueOf(negativeRatio).compareTo(bdZero) > 0 ? 0 : Integer.MIN_VALUE;
                 // Generate 'UNKNOWN' code.
                 do {
                     code = random.nextInt(origin, Integer.MAX_VALUE);
@@ -203,7 +217,6 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         }
 
         // Print the percentage of each code type:
-        DecimalFormat df = new DecimalFormat("##.##%");
         System.out.println("\n" + desc + "===>"
                 +"INFORMATIONAL:" + df.format(c1x / setUpData.length)
                 + ", SUCCESS:" + df.format(c2x / setUpData.length)
