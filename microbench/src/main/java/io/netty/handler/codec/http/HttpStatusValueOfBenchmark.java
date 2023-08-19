@@ -113,28 +113,11 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private void initDistributedData(String desc, int[] setUpData, SplittableRandom random, double informationalRatio,
                                      double successRatio, double redirectionRatio, double clientErrorRatio,
                                      double serverErrorRatio, double unknownRatio, double negativeRatio) {
-        BigDecimal[] bdArray = {
-                BigDecimal.valueOf(informationalRatio),
-                BigDecimal.valueOf(successRatio),
-                BigDecimal.valueOf(redirectionRatio),
-                BigDecimal.valueOf(clientErrorRatio),
-                BigDecimal.valueOf(serverErrorRatio),
-                BigDecimal.valueOf(unknownRatio),
-                BigDecimal.valueOf(negativeRatio)
-        };
-        BigDecimal bdSum = new BigDecimal("0.00");
-        for (BigDecimal bdParam : bdArray) {
-            if (bdParam.compareTo(bdZero) < 0) {
-                throw new IllegalArgumentException("Ratio MUST NOT negative");
-            }
-            if (bdParam.compareTo(bdZero) > 0 && bdParam.compareTo(bdLowest) < 0) {
-                throw new IllegalArgumentException("If ratio != 0, then the ratio MUST >= 0.01");
-            }
-            bdSum = bdSum.add(bdParam);
-        }
-        if (bdSum.compareTo(bdOne) > 0) {
-            throw new IllegalArgumentException("Sum of ratios MUST <= 1");
-        }
+        BigDecimal[] bdArray = { BigDecimal.valueOf(informationalRatio), BigDecimal.valueOf(successRatio),
+                                 BigDecimal.valueOf(redirectionRatio), BigDecimal.valueOf(clientErrorRatio),
+                                 BigDecimal.valueOf(serverErrorRatio), BigDecimal.valueOf(unknownRatio),
+                                 BigDecimal.valueOf(negativeRatio) };
+        validateRatios(bdArray);
 
         int totalCount = 0;
         int informationalCount = (int) (setUpData.length * informationalRatio);
@@ -154,8 +137,6 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
 
         double c1x = 0, c2x = 0, c3x = 0, c4x = 0, c5x = 0, c6x = 0, c7x = 0;
         for (int i = 0; i < totalCount;) {
-            // INFORMATIONAL:[100,200); SUCCESS:[200,300); REDIRECTION:[300,400);
-            // CLIENT_ERROR:[400,500); SERVER_ERROR:[500,600); UNKNOWN:[600,700); Negative:[700,800)
             int code = random.nextInt(100, 800);
             if (HttpStatusClass.INFORMATIONAL.contains(code) && informationalCount-- > 0) {
                 setUpData[i++] = code;
@@ -177,18 +158,19 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 setUpData[i++] = code;
                 ++c5x;
             }
-            // UNKNOWN code:
+            // UNKNOWN:[600,700)
             if (code >= 600 && code < 700 && unknownCount-- > 0) {
                 int origin = BigDecimal.valueOf(negativeRatio).compareTo(bdZero) > 0 ? 0 : Integer.MIN_VALUE;
-                // Generate 'UNKNOWN' code.
+                // Re-generate 'UNKNOWN' code.
                 do {
                     code = random.nextInt(origin, Integer.MAX_VALUE);
                 } while (code >= 100 && code < 600);
                 setUpData[i++] = code;
                 ++c6x;
             }
-            // Negative code:
+            // Negative:[700,800)
             if (code >= 700 && negativeCount-- > 0) {
+                // Re-generate Negative code.
                 code = random.nextInt(Integer.MIN_VALUE, 0);
                 setUpData[i++] = code;
                 ++c7x;
@@ -196,7 +178,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         }
 
         for (int i = (totalCount - 1); i < setUpData.length; i++) {
-            // Generate gap elements from 1xx to 5xx
+            // Generate remaining elements from scope 1xx to 5xx
             int code = random.nextInt(100, 600);
             setUpData[i] = code;
             if (HttpStatusClass.INFORMATIONAL.contains(code)) {
@@ -215,17 +197,35 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 ++c5x;
             }
         }
+        printCodePercentage(desc, setUpData.length, c1x, c2x, c3x, c4x, c5x, c6x, c7x);
+    }
 
-        // Print the percentage of each code type:
+    private void validateRatios(BigDecimal[] bdArray ) {
+        BigDecimal bdSum = new BigDecimal("0.00");
+        for (BigDecimal bdParam : bdArray) {
+            if (bdParam.compareTo(bdZero) < 0) {
+                throw new IllegalArgumentException("Ratio can NOT be negative");
+            }
+            if (bdParam.compareTo(bdZero) > 0 && bdParam.compareTo(bdLowest) < 0) {
+                throw new IllegalArgumentException("If ratio != 0, then the ratio MUST >= 0.01");
+            }
+            bdSum = bdSum.add(bdParam);
+        }
+        if (bdSum.compareTo(bdOne) > 0) {
+            throw new IllegalArgumentException("Sum of ratios MUST <= 1");
+        }
+    }
+
+    private void printCodePercentage(String desc, int length, double c1x, double c2x, double c3x, double c4x, double c5x, double c6x, double c7x) {
         System.out.println("\n" + desc + "===>"
-                +"INFORMATIONAL:" + df.format(c1x / setUpData.length)
-                + ", SUCCESS:" + df.format(c2x / setUpData.length)
-                + ", REDIRECTION:" + df.format(c3x / setUpData.length)
-                + ", CLIENT_ERROR:" + df.format(c4x / setUpData.length)
-                + ", SERVER_ERROR:" + df.format(c5x / setUpData.length)
-                + ", UNKNOWN:" + df.format(c6x / setUpData.length)
-                + ", NEGATIVE:" + df.format(c7x / setUpData.length)
-                );
+                +"INFORMATIONAL:" + df.format(c1x / length)
+                + ", SUCCESS:" + df.format(c2x / length)
+                + ", REDIRECTION:" + df.format(c3x / length)
+                + ", CLIENT_ERROR:" + df.format(c4x / length)
+                + ", SERVER_ERROR:" + df.format(c5x / length)
+                + ", UNKNOWN:" + df.format(c6x / length)
+                + ", NEGATIVE:" + df.format(c7x / length)
+        );
     }
 
     @SuppressJava6Requirement(reason = "suppress")
