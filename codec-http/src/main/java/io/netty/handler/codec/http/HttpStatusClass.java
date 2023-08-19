@@ -52,15 +52,6 @@ public enum HttpStatusClass {
         }
     };
 
-     private static final HttpStatusClass[] statusArray = new HttpStatusClass[6];
-     static {
-         statusArray[1] = INFORMATIONAL;
-         statusArray[2] = SUCCESS;
-         statusArray[3] = REDIRECTION;
-         statusArray[4] = CLIENT_ERROR;
-         statusArray[5] = SERVER_ERROR;
-     }
-
     /**
      * Returns the class of the specified HTTP status code.
      */
@@ -81,104 +72,6 @@ public enum HttpStatusClass {
             return SERVER_ERROR;
         }
         return UNKNOWN;
-    }
-
-    /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfSwitchCase(int code) {
-        switch (code / 100) {
-            // 1xx
-            case 1: return INFORMATIONAL;
-            // 2xx
-            case 2: return SUCCESS;
-            // 3xx
-            case 3: return REDIRECTION;
-            // 4xx
-            case 4: return CLIENT_ERROR;
-            // 5xx
-            case 5: return SERVER_ERROR;
-            // others
-            default: return UNKNOWN;
-        }
-    }
-
-    /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfSwitchCaseWithIfLess0(int code) {
-        if (code < 0) return UNKNOWN;
-        switch (code / 100) {
-            // 1xx
-            case 1: return INFORMATIONAL;
-            // 2xx
-            case 2: return SUCCESS;
-            // 3xx
-            case 3: return REDIRECTION;
-            // 4xx
-            case 4: return CLIENT_ERROR;
-            // 5xx
-            case 5: return SERVER_ERROR;
-            // others
-            default: return UNKNOWN;
-        }
-    }
-
-    /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfSwitchCaseWithFastDiv(int code) {
-        if (code < 0) return UNKNOWN;
-        switch (fastDiv100(code)) {
-            // 1xx
-            case 1: return INFORMATIONAL;
-            // 2xx
-            case 2: return SUCCESS;
-            // 3xx
-            case 3: return REDIRECTION;
-            // 4xx
-            case 4: return CLIENT_ERROR;
-            // 5xx
-            case 5: return SERVER_ERROR;
-            // others
-            default: return UNKNOWN;
-        }
-    }
-
-    /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfArrayIndex(int code) {
-        if (UNKNOWN.contains(code)) {
-            return UNKNOWN;
-        }
-        return statusArray[code / 100];
-    }
-
-    /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfArrayIndexOnly5Codes(int code) {
-        return statusArray[code / 100];
-    }
-
-    /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfArrayIndexWithFastDiv(int code) {
-        if (UNKNOWN.contains(code)) {
-            return UNKNOWN;
-        }
-        return statusArray[fastDiv100(code)];
-    }
-
-    /**
-     * @param code MUST >= 0
-     * @return
-     */
-    private static int fastDiv100(int code) {
-        // 0x51eb851f is hex of 1374389535L
-        return (int)((code * 1374389535L) >> 37);
     }
 
     /**
