@@ -70,7 +70,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         for (int i = 0; i < dataSwitchCaseWithFastDiv.length; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOfSwitchCaseWithFastDiv(dataSwitchCaseWithFastDiv[i]);
             bh.consume(rs);
-            HttpStatusClass rs2 = HttpStatusClass.valueOfSwitchCaseWithFastDivInline(dataSwitchCaseWithFastDiv[i]);
+            HttpStatusClass rs2 = HttpStatusClass.valueOfSwitchCaseWithIfLess0(dataSwitchCaseWithFastDiv[i]);
             bh.consume(rs2);
         }
         for (int i = 0; i < dataArrayIndexWithFastDiv.length; i++) {
@@ -78,13 +78,12 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             bh.consume(rs);
             HttpStatusClass rs1 = HttpStatusClass.valueOfArrayIndexWithFastDiv(dataArrayIndexWithFastDiv[i]);
             bh.consume(rs1);
-            HttpStatusClass rs2 = HttpStatusClass.valueOfArrayIndexWithFastDivInline(dataArrayIndexWithFastDiv[i]);
-            bh.consume(rs2);
         }
 
         // Generate bench mark data.
         data = new int[size];
         result = new HttpStatusClass[size];
+//        initBenchmarkDistributedDataReverse(data, random);
         initBenchmarkDistributedData(data, random);
     }
 
@@ -427,13 +426,13 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         return result;
     }
 
-//    @Benchmark
-//    public HttpStatusClass[] valueOfSwitchCaseWithFastDivInline() {
-//        for (int i = 0; i < size; ++i) {
-//            result[i] = HttpStatusClass.valueOfSwitchCaseWithFastDivInline(data[i]);
-//        }
-//        return result;
-//    }
+    @Benchmark
+    public HttpStatusClass[] valueOfSwitchCaseWithIfLess0() {
+        for (int i = 0; i < size; ++i) {
+            result[i] = HttpStatusClass.valueOfSwitchCaseWithIfLess0(data[i]);
+        }
+        return result;
+    }
 
     @Benchmark
     public HttpStatusClass[] valueOfSwitchCaseWithFastDiv() {
@@ -450,14 +449,6 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         }
         return result;
     }
-
-//    @Benchmark
-//    public HttpStatusClass[] valueOfArrayIndexWithFastDivInline() {
-//        for (int i = 0; i < size; ++i) {
-//            result[i] = HttpStatusClass.valueOfArrayIndexWithFastDivInline(data[i]);
-//        }
-//        return result;
-//    }
 
     @Benchmark
     public HttpStatusClass[] valueOfArrayIndexWithFastDiv() {

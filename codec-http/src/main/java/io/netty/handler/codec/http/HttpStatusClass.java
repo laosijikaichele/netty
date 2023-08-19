@@ -106,9 +106,9 @@ public enum HttpStatusClass {
     /**
      * This method is for benchmark comparison, will be removed after test done.
      */
-    public static HttpStatusClass valueOfSwitchCaseWithFastDiv(int code) {
+    public static HttpStatusClass valueOfSwitchCaseWithIfLess0(int code) {
         if (code < 0) return UNKNOWN;
-        switch (fastDiv100(code)) {
+        switch (code / 100) {
             // 1xx
             case 1: return INFORMATIONAL;
             // 2xx
@@ -127,9 +127,9 @@ public enum HttpStatusClass {
     /**
      * This method is for benchmark comparison, will be removed after test done.
      */
-    public static HttpStatusClass valueOfSwitchCaseWithFastDivInline(int code) {
+    public static HttpStatusClass valueOfSwitchCaseWithFastDiv(int code) {
         if (code < 0) return UNKNOWN;
-        switch ((int)((code * 1374389535L) >> 37)) {
+        switch (fastDiv100(code)) {
             // 1xx
             case 1: return INFORMATIONAL;
             // 2xx
@@ -166,21 +166,10 @@ public enum HttpStatusClass {
     }
 
     /**
-     * This method is for benchmark comparison, will be removed after test done.
-     */
-    public static HttpStatusClass valueOfArrayIndexWithFastDivInline(int code) {
-        if (UNKNOWN.contains(code)) {
-            return UNKNOWN;
-        }
-        return statusArray[(int)((code * 1374389535L) >> 37)];
-    }
-
-    /**
      * @param code MUST >= 0
      * @return
      */
     private static int fastDiv100(int code) {
-//        assert code >= 0;
         // 0x51eb851f is hex of 1374389535L
         return (int)((code * 1374389535L) >> 37);
     }
