@@ -57,7 +57,7 @@ public enum HttpStatusClass {
      */
     public static HttpStatusClass valueOf(int code) {
         if (code < 0) return UNKNOWN;
-        switch (code / 100) {
+        switch (fastDiv100(code)) {
             // 1xx
             case 1: return INFORMATIONAL;
             // 2xx
@@ -71,6 +71,15 @@ public enum HttpStatusClass {
             // others
             default: return UNKNOWN;
         }
+    }
+
+    /**
+     * @param code MUST >= 0
+     * @return
+     */
+    private static int fastDiv100(int code) {
+        // 0x51eb851f is hex of 1374389535L
+        return (int)((code * 1374389535L) >> 37);
     }
 
     /**
