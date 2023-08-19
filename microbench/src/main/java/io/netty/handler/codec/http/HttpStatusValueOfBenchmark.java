@@ -146,17 +146,14 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             if (HttpStatusClass.INFORMATIONAL.contains(code) && informationalCount-- > 0) {
                 setUpData[i++] = code;
                 ++c1x;
-                continue;
             }
             if (HttpStatusClass.SUCCESS.contains(code) && successCount-- > 0) {
                 setUpData[i++] = code;
                 ++c2x;
-                continue;
             }
             if (HttpStatusClass.REDIRECTION.contains(code) && redirectionCount-- > 0) {
                 setUpData[i++] = code;
                 ++c3x;
-                continue;
             }
             if (HttpStatusClass.CLIENT_ERROR.contains(code) && clientErrorCount-- > 0) {
                 setUpData[i++] = code;
