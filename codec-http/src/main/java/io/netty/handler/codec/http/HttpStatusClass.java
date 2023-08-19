@@ -158,6 +158,13 @@ public enum HttpStatusClass {
     /**
      * This method is for benchmark comparison, will be removed after test done.
      */
+    public static HttpStatusClass valueOfArrayIndexOnly5Codes(int code) {
+        return statusArray[code / 100];
+    }
+
+    /**
+     * This method is for benchmark comparison, will be removed after test done.
+     */
     public static HttpStatusClass valueOfArrayIndexWithFastDiv(int code) {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;

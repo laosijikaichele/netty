@@ -31,11 +31,12 @@ import java.util.SplittableRandom;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 2, time = 1)
-@Measurement(iterations = 2, time = 1)
+@Warmup(iterations = 1, time = 1)
+@Measurement(iterations = 1, time = 1)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private int[] data;
+    private int[] data5Codes;
     private HttpStatusClass[] result;
     @Param({"519", "1023", "2059", "3027"})
     public int size;
@@ -54,30 +55,34 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         int[] dataIfElse = new int[equalDistributedArraySize];
         int[] dataSwitchCase = new int[equalDistributedArraySize];
         int[] dataSwitchCaseWithFastDiv = new int[equalDistributedArraySize];
+        int[] dataArrayIndexOnly5Codes = new int[equalDistributedArraySize];
         int[] dataArrayIndexWithFastDiv = new int[equalDistributedArraySize];
         initEqualDistributedData(dataIfElse, random);
         initEqualDistributedData(dataSwitchCase, random);
         initEqualDistributedDataSwitchCaseWithFastDiv(dataSwitchCaseWithFastDiv, random);
+        initEqualDistributedDataArrayIndexOnly5Codes(dataArrayIndexOnly5Codes, random);
         initEqualDistributedDataArrayIndexWithFastDiv(dataArrayIndexWithFastDiv, random);
-        for (int i = 0; i < dataIfElse.length; i++) {
+        for (int i = 0; i < equalDistributedArraySize; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOf(dataIfElse[i]);
             bh.consume(rs);
         }
-        for (int i = 0; i < dataSwitchCase.length; i++) {
+        for (int i = 0; i < equalDistributedArraySize; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOfSwitchCase(dataSwitchCase[i]);
             bh.consume(rs);
         }
-        for (int i = 0; i < dataSwitchCaseWithFastDiv.length; i++) {
+        for (int i = 0; i < equalDistributedArraySize; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOfSwitchCaseWithFastDiv(dataSwitchCaseWithFastDiv[i]);
             bh.consume(rs);
             HttpStatusClass rs2 = HttpStatusClass.valueOfSwitchCaseWithIfLess0(dataSwitchCaseWithFastDiv[i]);
             bh.consume(rs2);
         }
-        for (int i = 0; i < dataArrayIndexWithFastDiv.length; i++) {
+        for (int i = 0; i < equalDistributedArraySize; i++) {
             HttpStatusClass rs = HttpStatusClass.valueOfArrayIndex(dataArrayIndexWithFastDiv[i]);
             bh.consume(rs);
             HttpStatusClass rs1 = HttpStatusClass.valueOfArrayIndexWithFastDiv(dataArrayIndexWithFastDiv[i]);
             bh.consume(rs1);
+            HttpStatusClass rs2 = HttpStatusClass.valueOfArrayIndexOnly5Codes(dataArrayIndexOnly5Codes[i]);
+            bh.consume(rs2);
         }
 
         // Generate bench mark data.
@@ -85,6 +90,10 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         result = new HttpStatusClass[size];
 //        initBenchmarkDistributedDataReverse(data, random);
         initBenchmarkDistributedData(data, random);
+
+        data5Codes = new int[size];
+        initBenchmarkDistributedDataFor5Codes(data5Codes, random);
+
     }
 
     @SuppressJava6Requirement(reason = "suppress")
@@ -128,6 +137,42 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         // Print the percentage of each code type:
         DecimalFormat df = new DecimalFormat("#.00");
         System.out.println("\ninitEqualDistributedDataArrayIndexWithFastDiv===>"
+                +"INFORMATIONAL:" + df.format((informationalCount * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((successCount * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((redirectionCount * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((clientErrorCount * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((serverErrorCount * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((unknownCount * 100.0f) / setUpData.length)
+                + "%");
+    }
+
+    @SuppressJava6Requirement(reason = "suppress")
+    private void initEqualDistributedDataArrayIndexOnly5Codes(int[] setUpData, SplittableRandom random) {
+        int informationalCount = 0, successCount = 0, redirectionCount = 0, clientErrorCount = 0,
+                serverErrorCount = 0, unknownCount = 0;
+        for (int i = 0; i < setUpData.length; i++) {
+            // The code random range: [100, 600)
+            int code = random.nextInt(100, 600);
+            setUpData[i] = code;
+            if (HttpStatusClass.INFORMATIONAL.contains(code)) {
+                ++informationalCount;
+            }
+            if (HttpStatusClass.SUCCESS.contains(code)) {
+                ++successCount;
+            }
+            if (HttpStatusClass.REDIRECTION.contains(code)) {
+                ++redirectionCount;
+            }
+            if (HttpStatusClass.CLIENT_ERROR.contains(code)) {
+                ++clientErrorCount;
+            }
+            if (HttpStatusClass.SERVER_ERROR.contains(code)) {
+                ++serverErrorCount;
+            }
+        }
+        // Print the percentage of each code type:
+        DecimalFormat df = new DecimalFormat("#.00");
+        System.out.println("\ninitEqualDistributedDataArrayIndexOnly5Codes===>"
                 +"INFORMATIONAL:" + df.format((informationalCount * 100.0f) / setUpData.length)
                 + "%, SUCCESS:" + df.format((successCount * 100.0f) / setUpData.length)
                 + "%, REDIRECTION:" + df.format((redirectionCount * 100.0f) / setUpData.length)
@@ -326,6 +371,66 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + "%");
     }
 
+    @SuppressJava6Requirement(reason = "suppress")
+    private void initBenchmarkDistributedDataFor5Codes(int[] setUpData, SplittableRandom random) {
+        int informationalCount = 0, successCount = 0, redirectionCount = 0, clientErrorCount = 0,
+                serverErrorCount = 0, unknownCount = 0;
+
+        int totalCount = 0;
+        int informationalDistributeCount = (int) (setUpData.length * 0.35);
+        totalCount += informationalDistributeCount;
+        int successDistributeCount = (int) (setUpData.length * 0.24);
+        totalCount += successDistributeCount;
+        int redirectionDistributeCount = (int) (setUpData.length * 0.19);
+        totalCount += redirectionDistributeCount;
+        int clientErrorDistributeCount = (int) (setUpData.length * 0.14);
+        totalCount += clientErrorDistributeCount;
+        int serverErrorDistributeCount = (int) (setUpData.length * 0.08);
+        totalCount += serverErrorDistributeCount;
+
+        if (totalCount < setUpData.length) {
+            informationalDistributeCount += setUpData.length - totalCount;
+        }
+
+        for (int i = 0; i < setUpData.length;) {
+            int code = random.nextInt(100, 600);
+            if (HttpStatusClass.INFORMATIONAL.contains(code) && informationalDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++informationalCount;
+                continue;
+            }
+            if (HttpStatusClass.SUCCESS.contains(code) && successDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++successCount;
+                continue;
+            }
+            if (HttpStatusClass.REDIRECTION.contains(code) && redirectionDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++redirectionCount;
+                continue;
+            }
+            if (HttpStatusClass.CLIENT_ERROR.contains(code) && clientErrorDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++clientErrorCount;
+            }
+            if (HttpStatusClass.SERVER_ERROR.contains(code) && serverErrorDistributeCount-- > 0) {
+                setUpData[i++] = code;
+                ++serverErrorCount;
+            }
+        }
+
+        // Print the percentage of each code type:
+        DecimalFormat df = new DecimalFormat("#.00");
+        System.out.println("\ninitBenchmarkDistributedDataFor5Codes===>"
+                +"INFORMATIONAL:" + df.format((informationalCount * 100.0f) / setUpData.length)
+                + "%, SUCCESS:" + df.format((successCount * 100.0f) / setUpData.length)
+                + "%, REDIRECTION:" + df.format((redirectionCount * 100.0f) / setUpData.length)
+                + "%, CLIENT_ERROR:" + df.format((clientErrorCount * 100.0f) / setUpData.length)
+                + "%, SERVER_ERROR:" + df.format((serverErrorCount * 100.0f) / setUpData.length)
+                + "%, UNKNOWN:" + df.format((unknownCount * 100.0f) / setUpData.length)
+                + "%");
+    }
+
     /**
      * Http code distribution:
      * INFORMATIONAL:2%, SUCCESS:6%, REDIRECTION:14%, CLIENT_ERROR:19%, SERVER_ERROR:24%, UNKNOWN:35%
@@ -446,6 +551,14 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     public HttpStatusClass[] valueOfArrayIndex() {
         for (int i = 0; i < size; ++i) {
             result[i] = HttpStatusClass.valueOfArrayIndex(data[i]);
+        }
+        return result;
+    }
+
+    @Benchmark
+    public HttpStatusClass[] valueOfArrayIndexOnly5Codes() {
+        for (int i = 0; i < size; ++i) {
+            result[i] = HttpStatusClass.valueOfArrayIndexOnly5Codes(data5Codes[i]);
         }
         return result;
     }
