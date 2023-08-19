@@ -65,7 +65,19 @@ public enum HttpStatusClass {
      * Returns the class of the specified HTTP status code.
      */
     public static HttpStatusClass valueOf(int code) {
-        return statusArray[code / 100];
+        if (UNKNOWN.contains(code)) {
+            return UNKNOWN;
+        }
+        return statusArray[fastDiv100(code)];
+    }
+
+    /**
+     * @param code MUST >= 0
+     * @return
+     */
+    private static int fastDiv100(int code) {
+        // 0x51eb851f is hex of 1374389535L
+        return (int)((code * 1374389535L) >> 37);
     }
 
     /**
