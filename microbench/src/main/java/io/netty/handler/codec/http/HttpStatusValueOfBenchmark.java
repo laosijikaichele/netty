@@ -458,4 +458,3 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         return result;
     }
 }
-
