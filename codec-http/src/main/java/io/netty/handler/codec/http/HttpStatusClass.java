@@ -65,9 +65,6 @@ public enum HttpStatusClass {
      * Returns the class of the specified HTTP status code.
      */
     public static HttpStatusClass valueOf(int code) {
-        if (UNKNOWN.contains(code)) {
-            return UNKNOWN;
-        }
         return statusArray[code / 100];
     }
 
