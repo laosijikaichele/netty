@@ -52,23 +52,34 @@ public enum HttpStatusClass {
         }
     };
 
-    private static final HttpStatusClass[] statusArray = new HttpStatusClass[6];
-    static {
-        statusArray[1] = INFORMATIONAL;
-        statusArray[2] = SUCCESS;
-        statusArray[3] = REDIRECTION;
-        statusArray[4] = CLIENT_ERROR;
-        statusArray[5] = SERVER_ERROR;
-    }
-
     /**
      * Returns the class of the specified HTTP status code.
      */
     public static HttpStatusClass valueOf(int code) {
-        if (UNKNOWN.contains(code)) {
-            return UNKNOWN;
+        if (code < 0) return UNKNOWN;
+        switch (fastDiv100(code)) {
+            // 1xx
+            case 1: return INFORMATIONAL;
+            // 2xx
+            case 2: return SUCCESS;
+            // 3xx
+            case 3: return REDIRECTION;
+            // 4xx
+            case 4: return CLIENT_ERROR;
+            // 5xx
+            case 5: return SERVER_ERROR;
+            // others
+            default: return UNKNOWN;
         }
-        return statusArray[code / 100];
+    }
+
+    /**
+     * @param code MUST >= 0
+     * @return
+     */
+    private static int fastDiv100(int code) {
+        // 0x51eb851f is hex of 1374389535L
+        return (int)((code * 1374389535L) >> 37);
     }
 
     /**
