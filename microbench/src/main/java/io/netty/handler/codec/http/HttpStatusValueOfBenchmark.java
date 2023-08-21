@@ -59,12 +59,12 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         final SplittableRandom random = new SplittableRandom();
         // Equal the branch predictor.
         int equalDistributedArraySize = 16000;
-        int[] dataArrayIndexWithFastDiv = new int[equalDistributedArraySize];
-        initDistributedData("dataArrayIndexWithFastDiv", dataArrayIndexWithFastDiv, random,
+        int[] dataSwitchCaseWithFastDiv = new int[equalDistributedArraySize];
+        initDistributedData("dataSwitchCaseWithFastDiv", dataSwitchCaseWithFastDiv, random,
                 0.166, 0.166, 0.166, 0.166,
                 0.166, 0.166, 0.0);
         for (int i = 0; i < equalDistributedArraySize; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOf(dataArrayIndexWithFastDiv[i]);
+            HttpStatusClass rs = HttpStatusClass.valueOf(dataSwitchCaseWithFastDiv[i]);
             bh.consume(rs);
         }
         data = new int[size];
