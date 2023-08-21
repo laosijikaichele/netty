@@ -57,7 +57,7 @@ public enum HttpStatusClass {
      */
     public static HttpStatusClass valueOf(int code) {
         if (code < 0) return UNKNOWN;
-        switch (fastDiv100(code)) {
+        switch (fastDiv100WithSub(code)) {
             // 1xx
             case 1: return INFORMATIONAL;
             // 2xx
