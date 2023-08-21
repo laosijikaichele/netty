@@ -68,7 +68,7 @@ public enum HttpStatusClass {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
-        int i = code / 100;
+        final int i = code / 100;
         return statusArray[i];
     }
 
