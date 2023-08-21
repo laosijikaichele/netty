@@ -77,9 +77,9 @@ public enum HttpStatusClass {
      * @param code MUST >= 0
      * @return
      */
-    private static int fastDiv100(int code) {
+    private static int fastDiv100WithSub(int code) {
         // 0x51eb851f is hex of 1374389535L
-        return (int)((code * 1374389535L) >> 37);
+        return(int)(((code*1374389535L)>>37)-(code>>31));
     }
 
     /**
