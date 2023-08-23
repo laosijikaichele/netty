@@ -44,7 +44,6 @@ import java.util.concurrent.TimeUnit;
 public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private int[] data;
     private HttpStatusClass[] result;
-//    @Param({"519", "1023", "2059", "3027"})
     @Param({"1300", "2600", "5300", "11000", "23000"})
     private int size;
     private final BigDecimal bdZero = new BigDecimal("0.00");
@@ -199,10 +198,10 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         );
     }
 
-//    @Override
-//    protected ChainedOptionsBuilder newOptionsBuilder() throws Exception {
-//        return super.newOptionsBuilder().addProfiler(LinuxPerfNormProfiler.class);
-//    }
+    @Override
+    protected ChainedOptionsBuilder newOptionsBuilder() throws Exception {
+        return super.newOptionsBuilder().addProfiler(LinuxPerfNormProfiler.class);
+    }
 
     @Benchmark
     public HttpStatusClass[] valueOf() {
