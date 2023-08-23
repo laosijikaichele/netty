@@ -26,6 +26,11 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import io.netty.util.internal.SuppressJava6Requirement;
+import org.openjdk.jmh.profile.GCProfiler;
+import org.openjdk.jmh.profile.LinuxPerfAsmProfiler;
+import org.openjdk.jmh.profile.LinuxPerfNormProfiler;
+import org.openjdk.jmh.profile.LinuxPerfProfiler;
+import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -191,6 +196,11 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + ", UNKNOWN:" + df.format(c6x / length)
                 + ", NEGATIVE:" + df.format(c7x / length)
         );
+    }
+
+    @Override
+    protected ChainedOptionsBuilder newOptionsBuilder() throws Exception {
+        return super.newOptionsBuilder().addProfiler(LinuxPerfNormProfiler.class);
     }
 
     @Benchmark
