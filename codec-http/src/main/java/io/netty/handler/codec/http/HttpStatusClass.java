@@ -68,7 +68,12 @@ public enum HttpStatusClass {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
-        return statusArray[code / 100];
+        return statusArray[fast_div100(code) / 100];
+    }
+
+    private static int fast_div100(int code) {
+        // 0x51eb851f is hex of 1374389535L
+        return (int)((code * 1374389535L) >> 37);
     }
 
     /**
