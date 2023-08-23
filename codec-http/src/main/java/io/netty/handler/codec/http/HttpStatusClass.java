@@ -68,7 +68,7 @@ public enum HttpStatusClass {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
-        return statusArray[fast_div100(code) / 100];
+        return statusArray[fast_div100(code)];
     }
 
     private static int fast_div100(int code) {
