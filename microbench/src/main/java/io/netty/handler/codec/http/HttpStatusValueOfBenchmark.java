@@ -35,11 +35,11 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 10, time = 1)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     private int[] data;
     private HttpStatusClass[] result;
-    @Param({"519", "1023", "2059", "3027"})
+    @Param({"1300", "2600", "5300", "11000", "23000"})
     private int size;
     private final BigDecimal bdZero = new BigDecimal("0.00");
     private final BigDecimal bdOne = new BigDecimal("1.00");
@@ -161,7 +161,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 ++c5x;
             }
         }
-        printCodePercentage(desc, setUpData.length, c1x, c2x, c3x, c4x, c5x, c6x, c7x);
+//        printCodePercentage(desc, setUpData.length, c1x, c2x, c3x, c4x, c5x, c6x, c7x);
     }
 
     private void validateRatios(BigDecimal[] bdArray ) {
