@@ -23,30 +23,38 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 import io.netty.util.internal.SuppressJava6Requirement;
 import org.openjdk.jmh.profile.LinuxPerfNormProfiler;
+import org.openjdk.jmh.profile.ProfilerException;
+import org.openjdk.jmh.profile.ProfilerFactory;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
+import org.openjdk.jmh.runner.options.ProfilerConfig;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.SplittableRandom;
+import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 10, time = 1)
-@Measurement(iterations = 10, time = 1)
+@Warmup(iterations = 1, time = 1)
+@Measurement(iterations = 1, time = 1)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
-    private int[] data;
-    private HttpStatusClass[] result;
-    @Param({"1300", "2600", "5300", "11000", "23000"})
+    @Param({"1300", "2600", "5300", "11000", "23000", "46000"})
     private int size;
+
+    private HttpStatusClass[] result;
+    private CircularLink circularLinkHead, circularLinkHead1, circularLinkHead2;
     private final BigDecimal bdZero = new BigDecimal("0.00");
     private final BigDecimal bdOne = new BigDecimal("1.00");
     private final BigDecimal bdLowest = new BigDecimal("0.01");
     private final DecimalFormat df = new DecimalFormat("##.##%");
+    private final static Stack<Object> HOLDER = new Stack<Object>();
+
     public HttpStatusValueOfBenchmark() {
         // disable assertion
         super(true);
@@ -56,34 +64,168 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
     @SuppressJava6Requirement(reason = "suppress")
     public void setup(Blackhole bh) {
         if (size < 100) {
-            throw new IllegalArgumentException("The size MUST > 100");
+            throw new IllegalArgumentException("The size MUST >= 100");
         }
-        final SplittableRandom random = new SplittableRandom();
+        SplittableRandom random = new SplittableRandom();
         // Equal the branch predictor.
-        int equalDistributedArraySize = 16000;
-        int[] dataArrayIndex = new int[equalDistributedArraySize];
-        initDistributedData("dataArrayIndex", dataArrayIndex, random,
+        int equalDistributedDataSize = 16000;
+        int[] equalDistributedData = new int[equalDistributedDataSize];
+        initDistributedData("equalDistributedData", equalDistributedData, random,
                 0.166, 0.166, 0.166, 0.166,
                 0.166, 0.166, 0.0);
-        for (int i = 0; i < equalDistributedArraySize; i++) {
-            HttpStatusClass rs = HttpStatusClass.valueOf(dataArrayIndex[i]);
-            bh.consume(rs);
+        for (int i = 0; i < equalDistributedDataSize; i++) {
+            bh.consume(HttpStatusClass.valueOf(equalDistributedData[i]));
         }
-        data = new int[size];
-        result = new HttpStatusClass[size];
-        // Generate bench mark data.
-        initDistributedData("data", data, random, 0.38, 0.30, 0.15,
+
+        // Generate benchmark data 1.
+        int[] benchMarkData1 = new int[size];
+        initDistributedData("benchMarkData1", benchMarkData1, random, 0.38, 0.30, 0.15,
                 0.10, 0.05, 0.02, 0.0);
+        circularLinkHead1 = newClockWiseCircularLinkWithData(benchMarkData1);
+
+        // Generate benchmark data 2.
+        int[] benchMarkData2 = new int[size];
+        initDistributedData("benchMarkData2", benchMarkData2, random, 0.37, 0.31, 0.14,
+                0.11, 0.04, 0.03, 0.0);
+        circularLinkHead2 = newClockWiseCircularLinkWithData(benchMarkData2);
+
+        validateClockWiseCircularLinkData(benchMarkData1, circularLinkHead1);
+        validateClockWiseCircularLinkData(benchMarkData2, circularLinkHead2);
+
+        circularLinkHead = circularLinkHead1;
+
+        // Hold to prevent GC
+        HOLDER.push(equalDistributedData);
+        HOLDER.push(benchMarkData1);
+        HOLDER.push(benchMarkData2);
+        HOLDER.push(circularLinkHead1);
+        HOLDER.push(circularLinkHead2);
+        HOLDER.push(random);
+
+        result = new HttpStatusClass[size];
     }
+
+//    @Benchmark
+//    public HttpStatusClass valueOf() {
+//        CircularLink ca = circularLinkHead;
+//        HttpStatusClass statusClass;
+//        do {
+//            statusClass = HttpStatusClass.valueOf(ca.value);
+//            ca = ca.next;
+//        } while (null != ca);
+//        // Swap link.
+////        circularLinkHead = circularLinkHead == circularLinkHead1 ? circularLinkHead2 : circularLinkHead1;
+//        return statusClass;
+//    }
+
+//    @Benchmark
+//    public HttpStatusClass valueOf() {
+//        int v = circularLink.value;
+//        circularLink = circularLink.next;
+//        exeCount ++;
+//        return HttpStatusClass.valueOf(v);
+//    }
+
+//    @Benchmark
+//    public HttpStatusClass[] valueOf() {
+//        for (int i = 0; i < size; ++i) {
+//            result[i] = HttpStatusClass.valueOf(data[i]);
+//        }
+//        return result;
+//    }
+
+    @Benchmark
+    public HttpStatusClass[] valueOf() {
+        CircularLink ca = circularLinkHead;
+        int i = 0;
+        do {
+            result[i++] = HttpStatusClass.valueOf(ca.value);
+            ca = ca.next;
+        } while (null != ca);
+        return result;
+    }
+
+    @TearDown
+    public void tearDown() {
+        HOLDER.clear();
+    }
+
+    private static final class CircularLink {
+        private CircularLink next = null;
+        private final int value;
+        private CircularLink(int value) {
+            this.value = value;
+        }
+    }
+
+    private CircularLink newClockWiseCircularLinkWithData(int[] originArray) {
+        CircularLink tail = null;
+        CircularLink head = null;
+        for (int i = 0 ; i < originArray.length; i++) {
+            if (i == 0) {
+                tail = head = new CircularLink(originArray[i]);
+            }
+            if (i + 1 < originArray.length) {
+                tail.next = new CircularLink(originArray[i + 1]);
+                tail = tail.next;
+            }
+        }
+        if (null == head || tail.next != null) {
+            throw new IllegalArgumentException("Fetch circularLink data error");
+        }
+        return head;
+    }
+
+//    private CircularLink newCounterClockWiseCircularLinkWithData(int[] originArray) {
+//        CircularLink tail = null;
+//        CircularLink head = null;
+//        for (int i = originArray.length - 1; i >= 0 ; i--) {
+//            if (i == originArray.length - 1) {
+//                tail = head = new CircularLink(originArray[i]);
+//            }
+//            if (i - 1 >= 0) {
+//                tail.next = new CircularLink(originArray[i - 1]);
+//                tail = tail.next;
+//            }
+//        }
+//        if (null == head || tail.next != null) {
+//            throw new IllegalArgumentException("Fetch circularLink data error");
+//        }
+//        return head;
+//    }
+
+    private void validateClockWiseCircularLinkData(int[] arrayData, CircularLink ca) {
+        for (int i = 0; i < arrayData.length; i++) {
+            if (arrayData[i] != ca.value) {
+                throw new RuntimeException("CircularLink data validate failed, index = " + i);
+            }
+            ca = ca.next;
+        }
+        if (ca != null) {
+            throw new RuntimeException("CircularLink data validate failed, tail.next MUST be null");
+        }
+    }
+
+//    private void validateCounterClockWiseCircularLinkData(int[] arrayData, CircularLink ca) {
+//        for (int i = arrayData.length - 1; i >= 0; i--) {
+//            if (arrayData[i] != ca.value) {
+//                throw new RuntimeException("CircularLink data validate failed, index = " + i);
+//            }
+//            ca = ca.next;
+//        }
+//        if (ca != null) {
+//            throw new RuntimeException("CircularLink data validate failed, tail.next MUST be null");
+//        }
+//    }
 
     @SuppressJava6Requirement(reason = "suppress")
     private void initDistributedData(String desc, int[] setUpData, SplittableRandom random, double informationalRatio,
                                      double successRatio, double redirectionRatio, double clientErrorRatio,
                                      double serverErrorRatio, double unknownRatio, double negativeRatio) {
         BigDecimal[] bdArray = { BigDecimal.valueOf(informationalRatio), BigDecimal.valueOf(successRatio),
-                                 BigDecimal.valueOf(redirectionRatio), BigDecimal.valueOf(clientErrorRatio),
-                                 BigDecimal.valueOf(serverErrorRatio), BigDecimal.valueOf(unknownRatio),
-                                 BigDecimal.valueOf(negativeRatio) };
+                BigDecimal.valueOf(redirectionRatio), BigDecimal.valueOf(clientErrorRatio),
+                BigDecimal.valueOf(serverErrorRatio), BigDecimal.valueOf(unknownRatio),
+                BigDecimal.valueOf(negativeRatio) };
         validateRatios(bdArray);
 
         int totalCount = 0;
@@ -144,7 +286,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
             }
         }
 
-        for (int i = (totalCount - 1); i < setUpData.length; i++) {
+        for (int i = totalCount - 1; i < setUpData.length; i++) {
             // Generate remaining elements from scope 1xx to 5xx
             int code = random.nextInt(100, 600);
             setUpData[i] = code;
@@ -167,7 +309,7 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
 //        printCodePercentage(desc, setUpData.length, c1x, c2x, c3x, c4x, c5x, c6x, c7x);
     }
 
-    private void validateRatios(BigDecimal[] bdArray ) {
+    private void validateRatios(BigDecimal[] bdArray) {
         BigDecimal bdSum = new BigDecimal("0.00");
         for (BigDecimal bdParam : bdArray) {
             if (bdParam.compareTo(bdZero) < 0) {
@@ -183,9 +325,22 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
         }
     }
 
-    private void printCodePercentage(String desc, int length, double c1x, double c2x, double c3x, double c4x, double c5x, double c6x, double c7x) {
+    @Override
+    protected ChainedOptionsBuilder newOptionsBuilder() throws Exception {
+        Class<LinuxPerfNormProfiler> profilerClass = LinuxPerfNormProfiler.class;
+        try {
+            ProfilerFactory.getProfilerOrException(new ProfilerConfig(profilerClass.getCanonicalName()));
+        } catch (ProfilerException t) {
+            // Fall back to default.
+            return super.newOptionsBuilder();
+        }
+        return super.newOptionsBuilder().addProfiler(profilerClass);
+    }
+
+    private void printCodePercentage(String desc, int length, double c1x, double c2x, double c3x, double c4x,
+                                     double c5x, double c6x, double c7x) {
         System.out.println("\n" + desc + "===>"
-                +"INFORMATIONAL:" + df.format(c1x / length)
+                + "INFORMATIONAL:" + df.format(c1x / length)
                 + ", SUCCESS:" + df.format(c2x / length)
                 + ", REDIRECTION:" + df.format(c3x / length)
                 + ", CLIENT_ERROR:" + df.format(c4x / length)
@@ -194,18 +349,4 @@ public class HttpStatusValueOfBenchmark extends AbstractMicrobenchmark {
                 + ", NEGATIVE:" + df.format(c7x / length)
         );
     }
-
-    @Override
-    protected ChainedOptionsBuilder newOptionsBuilder() throws Exception {
-        return super.newOptionsBuilder().addProfiler(LinuxPerfNormProfiler.class);
-    }
-
-    @Benchmark
-    public HttpStatusClass[] valueOf() {
-        for (int i = 0; i < size; ++i) {
-            result[i] = HttpStatusClass.valueOf(data[i]);
-        }
-        return result;
-    }
 }
-

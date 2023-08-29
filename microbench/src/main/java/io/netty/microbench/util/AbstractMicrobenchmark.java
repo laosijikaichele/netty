@@ -15,6 +15,7 @@
  */
 package io.netty.microbench.util;
 
+import io.netty.handler.codec.http.HttpStatusClass;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import io.netty.util.internal.SystemPropertyUtil;
 import io.netty.util.internal.logging.InternalLogger;
@@ -64,12 +65,10 @@ public class AbstractMicrobenchmark extends AbstractMicrobenchmarkBase {
             customArgs = new String[]{"-Xms768m", "-Xmx768m", "-XX:MaxDirectMemorySize=768m",
                     "-XX:BiasedLockingStartupDelay=0",
                     "-Djmh.executor=CUSTOM",
-                    "-Djmh.executor.class=io.netty.microbench.util.AbstractMicrobenchmark$HarnessExecutor",
-//                    "-XX:+UnlockDiagnosticVMOptions",
-//                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf*",
-//                    "-XX:+PrintInlining"
-//                    "-XX:CompileCommand='option *HttpStatusClass::valueOf*'"
-            };
+                    "-XX:+UnlockDiagnosticVMOptions",
+//                    "-XX:CompileCommand=print,*HttpStatusValueOfBenchmark.valueOf",
+                    "-XX:CompileCommand=print,*HttpStatusClass.valueOf",
+                    "-Djmh.executor.class=io.netty.microbench.util.AbstractMicrobenchmark$HarnessExecutor"};
         }
         String[] jvmArgs = new String[BASE_JVM_ARGS.length + customArgs.length];
         System.arraycopy(BASE_JVM_ARGS, 0, jvmArgs, 0, BASE_JVM_ARGS.length);

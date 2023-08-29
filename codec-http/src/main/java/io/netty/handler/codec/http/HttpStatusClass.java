@@ -68,13 +68,27 @@ public enum HttpStatusClass {
         if (UNKNOWN.contains(code)) {
             return UNKNOWN;
         }
-        return statusArray[fast_div100(code)];
+        return statusArray[code / 100];
     }
 
-    private static int fast_div100(int code) {
-        // 0x51eb851f is hex of 1374389535L
-        return (int)((code * 1374389535L) >> 37);
-    }
+//    public static HttpStatusClass valueOf(int code) {
+//        if (INFORMATIONAL.contains(code)) {
+//            return INFORMATIONAL;
+//        }
+//        if (SUCCESS.contains(code)) {
+//            return SUCCESS;
+//        }
+//        if (REDIRECTION.contains(code)) {
+//            return REDIRECTION;
+//        }
+//        if (CLIENT_ERROR.contains(code)) {
+//            return CLIENT_ERROR;
+//        }
+//        if (SERVER_ERROR.contains(code)) {
+//            return SERVER_ERROR;
+//        }
+//        return UNKNOWN;
+//    }
 
     /**
      * Returns the class of the specified HTTP status code.
@@ -84,7 +98,7 @@ public enum HttpStatusClass {
         if (code != null && code.length() == 3) {
             char c0 = code.charAt(0);
             return isDigit(c0) && isDigit(code.charAt(1)) && isDigit(code.charAt(2)) ? valueOf(digit(c0) * 100)
-                                                                                     : UNKNOWN;
+                    : UNKNOWN;
         }
         return UNKNOWN;
     }
