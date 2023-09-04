@@ -90,6 +90,56 @@ public enum HttpStatusClass {
 //        return UNKNOWN;
 //    }
 
+//    public static HttpStatusClass valueOf(int code) {
+//        switch (code / 100) {
+//            // 1xx
+//            case 1: return INFORMATIONAL;
+//            // 2xx
+//            case 2: return SUCCESS;
+//            // 3xx
+//            case 3: return REDIRECTION;
+//            // 4xx
+//            case 4: return CLIENT_ERROR;
+//            // 5xx
+//            case 5: return SERVER_ERROR;
+//            // others
+//            default: return UNKNOWN;
+//        }
+//    }
+
+//    public static HttpStatusClass valueOf(int code) {
+//        if (code < 0) {
+//            return UNKNOWN;
+//        }
+//        switch (fast_div100(code)) {
+//            // 1xx
+//            case 1: return INFORMATIONAL;
+//            // 2xx
+//            case 2: return SUCCESS;
+//            // 3xx
+//            case 3: return REDIRECTION;
+//            // 4xx
+//            case 4: return CLIENT_ERROR;
+//            // 5xx
+//            case 5: return SERVER_ERROR;
+//            // others
+//            default: return UNKNOWN;
+//        }
+//    }
+
+
+//    public static HttpStatusClass valueOf(int code) {
+//        if (UNKNOWN.contains(code)) {
+//            return UNKNOWN;
+//        }
+//        return statusArray[fast_div100(code)];
+//    }
+
+    public static int fast_div100(int code){
+        //0x51eb851f
+        return (int) ((code * 1374389535L) >> 37);
+    }
+
     /**
      * Returns the class of the specified HTTP status code.
      * @param code Just the numeric portion of the http status code.
