@@ -75,7 +75,7 @@ final class PoolThreadCache {
         this.directArena = directArena;
         if (directArena != null) {
             smallSubPageDirectCaches = createSubPageCaches(
-                    smallCacheSize, directArena.numSmallSubpagePools);
+                    smallCacheSize, directArena.sizeClass.nSubpages);
 
             normalDirectCaches = createNormalCaches(
                     normalCacheSize, maxCachedBufferCapacity, directArena);
@@ -89,7 +89,7 @@ final class PoolThreadCache {
         if (heapArena != null) {
             // Create the caches for the heap allocations
             smallSubPageHeapCaches = createSubPageCaches(
-                    smallCacheSize, heapArena.numSmallSubpagePools);
+                    smallCacheSize, heapArena.sizeClass.nSubpages);
 
             normalHeapCaches = createNormalCaches(
                     normalCacheSize, maxCachedBufferCapacity, heapArena);
@@ -130,11 +130,12 @@ final class PoolThreadCache {
     private static <T> MemoryRegionCache<T>[] createNormalCaches(
             int cacheSize, int maxCachedBufferCapacity, PoolArena<T> area) {
         if (cacheSize > 0 && maxCachedBufferCapacity > 0) {
-            int max = Math.min(area.chunkSize, maxCachedBufferCapacity);
+            int max = Math.min(area.sizeClass.chunkSize, maxCachedBufferCapacity);
             // Create as many normal caches as we support based on how many sizeIdx we have and what the upper
             // bound is that we want to cache in general.
             List<MemoryRegionCache<T>> cache = new ArrayList<MemoryRegionCache<T>>() ;
-            for (int idx = area.numSmallSubpagePools; idx < area.nSizes && area.sizeIdx2size(idx) <= max ; idx++) {
+            for (int idx = area.sizeClass.nSubpages; idx < area.sizeClass.nSizes &&
+                    area.sizeClass.sizeIdx2size(idx) <= max ; idx++) {
                 cache.add(new NormalMemoryRegionCache<T>(cacheSize));
             }
             return cache.toArray(new MemoryRegionCache[0]);
@@ -183,7 +184,7 @@ final class PoolThreadCache {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     boolean add(PoolArena<?> area, PoolChunk chunk, ByteBuffer nioBuffer,
                 long handle, int normCapacity, SizeClass sizeClass) {
-        int sizeIdx = area.size2SizeIdx(normCapacity);
+        int sizeIdx = area.sizeClass.size2SizeIdx(normCapacity);
         MemoryRegionCache<?> cache = cache(area, sizeIdx, sizeClass);
         if (cache == null) {
             return false;
@@ -297,8 +298,8 @@ final class PoolThreadCache {
     }
 
     private MemoryRegionCache<?> cacheForNormal(PoolArena<?> area, int sizeIdx) {
-        // We need to substract area.numSmallSubpagePools as sizeIdx is the overall index for all sizes.
-        int idx = sizeIdx - area.numSmallSubpagePools;
+        // We need to substract area.sizeClass.nSubpages as sizeIdx is the overall index for all sizes.
+        int idx = sizeIdx - area.sizeClass.nSubpages;
         if (area.isDirect()) {
             return cache(normalDirectCaches, idx);
         }
