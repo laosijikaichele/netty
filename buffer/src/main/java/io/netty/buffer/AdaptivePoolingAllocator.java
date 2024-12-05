@@ -598,7 +598,7 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
                 curr = null;
             } finally {
                 if (curr != null) {
-                    // Something went wrong, let's ensure we not leak the newChunk.
+                    // Something went wrong, let's ensure we not leak the 'curr' chunk.
                     curr.release();
                 }
             }
