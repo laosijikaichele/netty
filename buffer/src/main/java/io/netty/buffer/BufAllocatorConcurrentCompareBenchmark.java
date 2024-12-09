@@ -2,6 +2,7 @@ package io.netty.microbench.buffer;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.microbench.util.AbstractMicrobenchmark;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Fork;
@@ -18,7 +19,8 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 5, time = 1)
 @Fork(1)
 public class BufAllocatorConcurrentCompareBenchmark extends AbstractMicrobenchmark {
-    private static final ByteBufAllocator defaultAllocator = ByteBufAllocator.DEFAULT;
+
+    private static final ByteBufAllocator defaultPooledAllocator = PooledByteBufAllocator.DEFAULT;
 
     @Param({
             "123",
@@ -44,7 +46,7 @@ public class BufAllocatorConcurrentCompareBenchmark extends AbstractMicrobenchma
     @Benchmark
     @Threads(16)
     public void AllocateReleaseHeapDefault(Blackhole blackhole) {
-        ByteBuf buf = defaultAllocator.heapBuffer(size);
+        ByteBuf buf = defaultPooledAllocator.heapBuffer(size);
         if (tokens > 0) {
             Blackhole.consumeCPU(tokens);
         }
