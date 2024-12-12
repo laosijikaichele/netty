@@ -34,7 +34,6 @@ public class BufAllocatorOOMBenchmark {
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include(BufAllocatorOOMBenchmark.class.getSimpleName())
-                .result("result.json")
                 .resultFormat(ResultFormatType.JSON)
                 .jvmArgs("-Xms168m", "-Xmx168m", "-XX:MaxDirectMemorySize=168m")
                 .build();
