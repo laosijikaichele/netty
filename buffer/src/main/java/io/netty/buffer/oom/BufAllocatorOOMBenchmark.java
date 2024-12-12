@@ -28,7 +28,7 @@ public class BufAllocatorOOMBenchmark {
 
     private final ByteBufAllocator defaultPooledAllocator = PooledByteBufAllocator.DEFAULT;
 
-    @Param("559225")
+    @Param("659225")
     private int size;
 
     public static void main(String[] args) throws RunnerException {
