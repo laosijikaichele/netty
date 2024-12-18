@@ -1,0 +1,652 @@
+[
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseDirectAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "00064"
+        },
+        "primaryMetric" : {
+            "score" : 1.0245019994671941E8,
+            "scoreError" : 3139956.5465598237,
+            "scoreConfidence" : [
+                9.931024340015958E7,
+                1.0559015649327923E8
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9.697976222431393E7,
+                "50.0" : 1.0274753918786061E8,
+                "90.0" : 1.0663457792382565E8,
+                "95.0" : 1.0677656552331127E8,
+                "99.0" : 1.0678303968240868E8,
+                "99.9" : 1.0678303968240868E8,
+                "99.99" : 1.0678303968240868E8,
+                "99.999" : 1.0678303968240868E8,
+                "99.9999" : 1.0678303968240868E8,
+                "100.0" : 1.0678303968240868E8
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    1.0582090562589982E8,
+                    1.0599913734719831E8,
+                    1.0539372764347465E8,
+                    1.0665355650046062E8,
+                    1.0532755018918549E8,
+                    1.0678303968240868E8,
+                    1.0614595640669593E8,
+                    1.0506495419748704E8,
+                    1.0514689736194517E8,
+                    1.064637707341109E8
+                ],
+                [
+                    9.838912273318897E7,
+                    1.0043012417823416E8,
+                    9.952975407313587E7,
+                    9.697976222431393E7,
+                    9.805357840137781E7,
+                    9.878243268186371E7,
+                    1.0026091447227168E8,
+                    9.945928162915292E7,
+                    9.922836307923907E7,
+                    9.909116977274312E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseDirectAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "00256"
+        },
+        "primaryMetric" : {
+            "score" : 9.159284843291216E7,
+            "scoreError" : 2661478.156679379,
+            "scoreConfidence" : [
+                8.893137027623278E7,
+                9.425432658959153E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 8.648614739167087E7,
+                "50.0" : 9.14818055751802E7,
+                "90.0" : 9.577274243862016E7,
+                "95.0" : 9.680710376890396E7,
+                "99.0" : 9.685828910851109E7,
+                "99.9" : 9.685828910851109E7,
+                "99.99" : 9.685828910851109E7,
+                "99.999" : 9.685828910851109E7,
+                "99.9999" : 9.685828910851109E7,
+                "100.0" : 9.685828910851109E7
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    8.93408602719149E7,
+                    8.93002755435488E7,
+                    8.788638173760301E7,
+                    8.853814579973464E7,
+                    8.909139420664997E7,
+                    8.648614739167087E7,
+                    8.851365045864274E7,
+                    9.055738367378496E7,
+                    8.980375600578836E7,
+                    8.896869923164412E7
+                ],
+                [
+                    9.685828910851109E7,
+                    9.583458231636842E7,
+                    9.262663792495641E7,
+                    9.428553382804441E7,
+                    9.521618353888595E7,
+                    9.427807343401982E7,
+                    9.414321256791678E7,
+                    9.348340064662462E7,
+                    9.423813349535815E7,
+                    9.240622747657545E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseDirectAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "01024"
+        },
+        "primaryMetric" : {
+            "score" : 1.0083151141256283E8,
+            "scoreError" : 2881756.0766911535,
+            "scoreConfidence" : [
+                9.794975533587168E7,
+                1.0371326748925398E8
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9.458719910422239E7,
+                "50.0" : 1.0093178314680475E8,
+                "90.0" : 1.0446562725214726E8,
+                "95.0" : 1.0464884170355342E8,
+                "99.0" : 1.0465766319411318E8,
+                "99.9" : 1.0465766319411318E8,
+                "99.99" : 1.0465766319411318E8,
+                "99.999" : 1.0465766319411318E8,
+                "99.9999" : 1.0465766319411318E8,
+                "100.0" : 1.0465766319411318E8
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    1.0369212851409537E8,
+                    1.0375986318344599E8,
+                    1.0399318810336863E8,
+                    1.029345353572265E8,
+                    1.0425444098847815E8,
+                    1.0465766319411318E8,
+                    1.0361715419322166E8,
+                    1.0352148338169408E8,
+                    1.0448123338291812E8,
+                    1.0432517207520956E8
+                ],
+                [
+                    9.820720091666421E7,
+                    9.742650428660285E7,
+                    9.884922633586901E7,
+                    9.690894264224286E7,
+                    9.867137701868376E7,
+                    9.716437144220564E7,
+                    9.855781638005409E7,
+                    9.809169681455785E7,
+                    9.8929030936383E7,
+                    9.458719910422239E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseDirectAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "04096"
+        },
+        "primaryMetric" : {
+            "score" : 9.271970345659412E7,
+            "scoreError" : 1452236.3547887348,
+            "scoreConfidence" : [
+                9.126746710180539E7,
+                9.417193981138286E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9.012097297446647E7,
+                "50.0" : 9.249868272691339E7,
+                "90.0" : 9.49892392316959E7,
+                "95.0" : 9.537236135497099E7,
+                "99.0" : 9.539159623908046E7,
+                "99.9" : 9.539159623908046E7,
+                "99.99" : 9.539159623908046E7,
+                "99.999" : 9.539159623908046E7,
+                "99.9999" : 9.539159623908046E7,
+                "100.0" : 9.539159623908046E7
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    9.135568875551519E7,
+                    9.073332047528927E7,
+                    9.170339436650497E7,
+                    9.205164680108587E7,
+                    9.229031986592773E7,
+                    9.1317587852499E7,
+                    9.012097297446647E7,
+                    9.225356679530948E7,
+                    9.074513222284847E7,
+                    9.033342739430152E7
+                ],
+                [
+                    9.472847461483869E7,
+                    9.50068985568912E7,
+                    9.362200414430058E7,
+                    9.412861589640793E7,
+                    9.539159623908046E7,
+                    9.347608311786205E7,
+                    9.483030530493829E7,
+                    9.32602774129205E7,
+                    9.4337710752996E7,
+                    9.270704558789907E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseHeapAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "00064"
+        },
+        "primaryMetric" : {
+            "score" : 9.29069169064842E7,
+            "scoreError" : 808116.8885830264,
+            "scoreConfidence" : [
+                9.209880001790118E7,
+                9.371503379506722E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9.041627407864289E7,
+                "50.0" : 9.310541932196285E7,
+                "90.0" : 9.381488713540433E7,
+                "95.0" : 9.396614516188847E7,
+                "99.0" : 9.39737210176865E7,
+                "99.9" : 9.39737210176865E7,
+                "99.99" : 9.39737210176865E7,
+                "99.999" : 9.39737210176865E7,
+                "99.9999" : 9.39737210176865E7,
+                "100.0" : 9.39737210176865E7
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    9.39737210176865E7,
+                    9.264974369364943E7,
+                    9.24999039173874E7,
+                    9.312153772246599E7,
+                    9.363123652883719E7,
+                    9.303796188586593E7,
+                    9.272061369961068E7,
+                    9.349207722792788E7,
+                    9.372059657121153E7,
+                    9.321381670564815E7
+                ],
+                [
+                    9.041627407864289E7,
+                    9.352947154353598E7,
+                    9.374903623851147E7,
+                    9.17438841659569E7,
+                    9.382220390172577E7,
+                    9.288035793138175E7,
+                    9.170739728747033E7,
+                    9.30893009214597E7,
+                    9.36120458568421E7,
+                    9.152715723386621E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseHeapAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "00256"
+        },
+        "primaryMetric" : {
+            "score" : 9.786053931230798E7,
+            "scoreError" : 1.3068962767797342E7,
+            "scoreConfidence" : [
+                8.479157654451065E7,
+                1.1092950208010532E8
+            ],
+            "scorePercentiles" : {
+                "0.0" : 8.209089201099655E7,
+                "50.0" : 9.783173891057739E7,
+                "90.0" : 1.1307710215444969E8,
+                "95.0" : 1.1323918444050826E8,
+                "99.0" : 1.1324683574572168E8,
+                "99.9" : 1.1324683574572168E8,
+                "99.99" : 1.1324683574572168E8,
+                "99.999" : 1.1324683574572168E8,
+                "99.9999" : 1.1324683574572168E8,
+                "100.0" : 1.1324683574572168E8
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    1.1324683574572168E8,
+                    1.1243639896373738E8,
+                    1.1254378219516784E8,
+                    1.1292673477141824E8,
+                    1.1223346462171E8,
+                    1.1262875683334951E8,
+                    1.1309380964145318E8,
+                    1.1251551195009097E8,
+                    1.116402193994529E8,
+                    1.119178252401915E8
+                ],
+                [
+                    8.387571576979315E7,
+                    8.2633214153957E7,
+                    8.243237776033977E7,
+                    8.40232584217019E7,
+                    8.382138466976397E7,
+                    8.33549473280952E7,
+                    8.209089201099655E7,
+                    8.393301073723954E7,
+                    8.306618890558255E7,
+                    8.279645712639688E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseHeapAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "01024"
+        },
+        "primaryMetric" : {
+            "score" : 9.87453485051847E7,
+            "scoreError" : 2799448.8190951743,
+            "scoreConfidence" : [
+                9.594589968608952E7,
+                1.0154479732427987E8
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9.491963948126583E7,
+                "50.0" : 9.767969344116455E7,
+                "90.0" : 1.031861587886049E8,
+                "95.0" : 1.0330916227595654E8,
+                "99.0" : 1.0331319742698932E8,
+                "99.9" : 1.0331319742698932E8,
+                "99.99" : 1.0331319742698932E8,
+                "99.999" : 1.0331319742698932E8,
+                "99.9999" : 1.0331319742698932E8,
+                "100.0" : 1.0331319742698932E8
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    9.58891300327847E7,
+                    9.594827170458621E7,
+                    9.583182277296226E7,
+                    9.564809827350982E7,
+                    9.616758169085544E7,
+                    9.513327703116572E7,
+                    9.609701051356146E7,
+                    9.612841333591555E7,
+                    9.491963948126583E7,
+                    9.614970052655421E7
+                ],
+                [
+                    1.0189287256487419E8,
+                    1.0323249440633379E8,
+                    1.0331319742698932E8,
+                    1.0255216078417341E8,
+                    1.0276913822904485E8,
+                    1.0249687995385419E8,
+                    1.0197797267270465E8,
+                    9.985856032999371E7,
+                    9.919180519147368E7,
+                    9.970894318109071E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.36",
+        "benchmark" : "io.netty.microbench.buffer.AdaptiveByteBufAllocatorConcurrentNoCacheBenchmark.allocateReleaseHeapAdaptive",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 2,
+        "jvm" : "/Users/jason/Library/Java/JavaVirtualMachines/azul-17.0.8/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-server",
+            "-dsa",
+            "-da",
+            "-ea:io.netty...",
+            "-XX:+HeapDumpOnOutOfMemoryError",
+            "-Dio.netty.leakDetection.level=disabled",
+            "-Xms768m",
+            "-Xmx768m",
+            "-XX:MaxDirectMemorySize=768m",
+            "-XX:BiasedLockingStartupDelay=0"
+        ],
+        "jdkVersion" : "17.0.8",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.8+7-LTS",
+        "warmupIterations" : 10,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 10,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "04096"
+        },
+        "primaryMetric" : {
+            "score" : 8.830678877227044E7,
+            "scoreError" : 2846920.080236207,
+            "scoreConfidence" : [
+                8.545986869203423E7,
+                9.115370885250665E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 8.446178776134858E7,
+                "50.0" : 8.847355386779985E7,
+                "90.0" : 9.174480826161586E7,
+                "95.0" : 9.347272099410114E7,
+                "99.0" : 9.356212147630501E7,
+                "99.9" : 9.356212147630501E7,
+                "99.99" : 9.356212147630501E7,
+                "99.999" : 9.356212147630501E7,
+                "99.9999" : 9.356212147630501E7,
+                "100.0" : 9.356212147630501E7
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    8.44771987792482E7,
+                    8.505954253118153E7,
+                    8.506286864482734E7,
+                    8.48159068927757E7,
+                    8.549251024409746E7,
+                    8.690190990305829E7,
+                    8.446178776134858E7,
+                    8.550533498245117E7,
+                    8.530067795884772E7,
+                    8.494172104352371E7
+                ],
+                [
+                    9.108829646669084E7,
+                    9.143486038771832E7,
+                    9.177411183222757E7,
+                    9.356212147630501E7,
+                    9.106251553278923E7,
+                    9.13674561383601E7,
+                    9.14810761261104E7,
+                    9.10388064868327E7,
+                    9.00451978325414E7,
+                    9.12618744244737E7
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+
