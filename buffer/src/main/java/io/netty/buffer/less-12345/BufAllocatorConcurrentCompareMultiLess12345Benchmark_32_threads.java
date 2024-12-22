@@ -25,12 +25,6 @@ public class BufAllocatorConcurrentCompareMultiLess12345Benchmark_32_threads ext
     private final AdaptiveByteBufAllocator adaptiveAllocatorNoCache =
             new AdaptiveByteBufAllocator(true, false);
 
-//    private final ByteBufAllocator defaultPooledAllocator = PooledByteBufAllocator.DEFAULT;
-
-//    private final AdaptiveByteBufAllocator adaptiveAllocatorCache =
-//            new AdaptiveByteBufAllocator(true, true);
-
-//    @Param({"12345", "123456", "1234567"})
     @Param({"123"})
     private int size;
 
@@ -57,21 +51,5 @@ public class BufAllocatorConcurrentCompareMultiLess12345Benchmark_32_threads ext
         blackhole.consume(buf);
         blackhole.consume(buf.release());
     }
-
-//    @Benchmark
-//    @Threads(8)
-//    public void allocateReleaseHeap(Blackhole blackhole) {
-//        ByteBuf buf = defaultPooledAllocator.heapBuffer(size);
-//        blackhole.consume(buf);
-//        blackhole.consume(buf.release());
-//    }
-
-//    @Benchmark
-//    @Threads(8)
-//    public void allocateReleaseHeap(Blackhole blackhole) {
-//        ByteBuf buf = adaptiveAllocatorCache.heapBuffer(size);
-//        blackhole.consume(buf);
-//        blackhole.consume(buf.release());
-//    }
 
 }
