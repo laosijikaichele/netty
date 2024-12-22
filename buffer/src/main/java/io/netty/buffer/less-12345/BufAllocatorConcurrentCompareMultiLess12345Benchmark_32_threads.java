@@ -17,8 +17,8 @@ import org.openjdk.jmh.infra.Blackhole;
 import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 
 @State(Scope.Benchmark)
-@Warmup(iterations = 1, time = 1)
-@Measurement(iterations = 1, time = 1)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 5, time = 1)
 @Fork(1)
 public class BufAllocatorConcurrentCompareMultiLess12345Benchmark_32_threads extends AbstractMicrobenchmark {
 
