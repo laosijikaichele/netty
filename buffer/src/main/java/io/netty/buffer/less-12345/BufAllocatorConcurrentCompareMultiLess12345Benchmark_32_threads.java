@@ -20,7 +20,7 @@ import org.openjdk.jmh.runner.options.ChainedOptionsBuilder;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(1)
-public class BufAllocatorConcurrentCompareMultiLess12345Benchmark extends AbstractMicrobenchmark {
+public class BufAllocatorConcurrentCompareMultiLess12345Benchmark_32_threads extends AbstractMicrobenchmark {
 
     private final AdaptiveByteBufAllocator adaptiveAllocatorNoCache =
             new AdaptiveByteBufAllocator(true, false);
@@ -36,7 +36,7 @@ public class BufAllocatorConcurrentCompareMultiLess12345Benchmark extends Abstra
 
     private final String[] sizeParams = new String[13345 / 123];
 
-    public BufAllocatorConcurrentCompareMultiLess12345Benchmark() {
+    public BufAllocatorConcurrentCompareMultiLess12345Benchmark_32_threads() {
         // Set the second param to 'false' when using 'adaptiveAllocatorCache'.
         super(false, true);
         sizeParams[0] = "123";
