@@ -31,7 +31,7 @@ public class BufAllocatorConcurrentCompareMultiLess12345Benchmark_32_threads ext
 //            new AdaptiveByteBufAllocator(true, true);
 
 //    @Param({"12345", "123456", "1234567"})
-    @Param({"492"})
+    @Param({"123"})
     private int size;
 
     private final String[] sizeParams = new String[13345 / 123];
