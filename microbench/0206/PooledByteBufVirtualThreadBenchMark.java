@@ -37,28 +37,30 @@ public class PooledByteBufVirtualThreadBenchMark {
         }
     }
 
-    private static void defaultBench() throws InterruptedException {
-        long[] durations = new long[TOTAL_ITERATIONS];
-        for (int i = 0; i < TOTAL_ITERATIONS; i++) {
-            durations[i] = doBench(DEFAULT);
-        }
-        long sum = 0;
-        for (int j = WARMUP_ITERATIONS; j < TOTAL_ITERATIONS; j++) {
-            sum += durations[j];
-        }
-        System.out.println("Default alloc avg duration: " + sum / BENCH_ITERATIONS);
-    }
-
     private static void noThreadLocalBench() throws InterruptedException {
         long[] durations = new long[TOTAL_ITERATIONS];
         for (int i = 0; i < TOTAL_ITERATIONS; i++) {
             durations[i] = doBench(DEFAULT_NO_TL);
         }
         long sum = 0;
+        // Only calculate BENCH_ITERATIONS.
         for (int j = WARMUP_ITERATIONS; j < TOTAL_ITERATIONS; j++) {
             sum += durations[j];
         }
         System.out.println("NO-ThreadLocal alloc avg duration: " + sum / BENCH_ITERATIONS);
+    }
+
+    private static void defaultBench() throws InterruptedException {
+        long[] durations = new long[TOTAL_ITERATIONS];
+        for (int i = 0; i < TOTAL_ITERATIONS; i++) {
+            durations[i] = doBench(DEFAULT);
+        }
+        long sum = 0;
+        // Only calculate BENCH_ITERATIONS.
+        for (int j = WARMUP_ITERATIONS; j < TOTAL_ITERATIONS; j++) {
+            sum += durations[j];
+        }
+        System.out.println("Default alloc avg duration: " + sum / BENCH_ITERATIONS);
     }
 
     private static long doBench(PooledByteBufAllocator allocator) throws InterruptedException {
