@@ -45,7 +45,7 @@ public class ByteBufAllocatorConcurrentBenchmark extends AbstractMicrobenchmark 
     public int size;
 
     public ByteBufAllocatorConcurrentBenchmark() {
-        super(true, true);
+        super(true, false);
     }
 
     @Benchmark
