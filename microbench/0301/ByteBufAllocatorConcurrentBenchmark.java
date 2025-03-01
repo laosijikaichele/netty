@@ -45,6 +45,9 @@ public class ByteBufAllocatorConcurrentBenchmark extends AbstractMicrobenchmark 
     public int size;
 
     public ByteBufAllocatorConcurrentBenchmark() {
+        // Use the second param to control the thread type:
+        // false: event-loop(FastThreadLocalThread) thread.
+        // true: normal platform thread.
         super(true, false);
     }
 
