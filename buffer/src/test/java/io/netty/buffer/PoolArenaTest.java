@@ -32,7 +32,7 @@ public class PoolArenaTest {
     private static final int CHUNK_SIZE = 16777216;
 
     protected PoolArena<ByteBuffer> newDirectArena(SizeClasses sc) {
-        return new PoolArena.DirectArena(null, sc, true);
+        return new PoolArena.DirectArena(null, sc);
     }
 
     @Test
