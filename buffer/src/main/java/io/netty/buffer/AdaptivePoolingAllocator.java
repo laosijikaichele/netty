@@ -120,13 +120,6 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
     private static final int CENTRAL_QUEUE_CAPACITY = Math.max(2, SystemPropertyUtil.getInt(
             "io.netty.allocator.centralQueueCapacity", NettyRuntime.availableProcessors()));
 
-    /**
-     * The capacity if the magazine local buffer queue. This queue just pools the outer ByteBuf instance and not
-     * the actual memory and so helps to reduce GC pressure.
-     */
-    private static final int MAGAZINE_BUFFER_QUEUE_CAPACITY = SystemPropertyUtil.getInt(
-            "io.netty.allocator.magazineBufferQueueCapacity", 1024);
-
     private static final Object NO_MAGAZINE = Boolean.TRUE;
 
     private final ChunkAllocator chunkAllocator;
@@ -140,10 +133,6 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
     static {
         if (CENTRAL_QUEUE_CAPACITY < 2) {
             throw new IllegalArgumentException("CENTRAL_QUEUE_CAPACITY: " + CENTRAL_QUEUE_CAPACITY
-                    + " (expected: >= " + 2 + ')');
-        }
-        if (MAGAZINE_BUFFER_QUEUE_CAPACITY < 2) {
-            throw new IllegalArgumentException("MAGAZINE_BUFFER_QUEUE_CAPACITY: " + MAGAZINE_BUFFER_QUEUE_CAPACITY
                     + " (expected: >= " + 2 + ')');
         }
     }
@@ -538,7 +527,6 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
         private volatile Chunk nextInLine;
         private final AtomicLong usedMemory;
         private final StampedLock allocationLock;
-        private final Queue<AdaptiveByteBuf> bufferQueue;
         private final ObjectPool.Handle<AdaptiveByteBuf> handle;
 
         Magazine(AdaptivePoolingAllocator parent) {
@@ -551,16 +539,13 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
             if (shareable) {
                 // We only need the StampedLock if this Magazine will be shared across threads.
                 allocationLock = new StampedLock();
-                bufferQueue = PlatformDependent.newFixedMpmcQueue(MAGAZINE_BUFFER_QUEUE_CAPACITY);
                 handle = new ObjectPool.Handle<AdaptiveByteBuf>() {
                     @Override
                     public void recycle(AdaptiveByteBuf self) {
-                        bufferQueue.offer(self);
                     }
                 };
             } else {
                 allocationLock = null;
-                bufferQueue = null;
                 handle = null;
             }
             usedMemory = new AtomicLong();
@@ -791,10 +776,7 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
             if (handle == null) {
                 buf = EVENT_LOOP_LOCAL_BUFFER_POOL.get();
             } else {
-                buf = bufferQueue.poll();
-                if (buf == null) {
-                    buf = new AdaptiveByteBuf(handle);
-                }
+                buf = new AdaptiveByteBuf(handle);
             }
             buf.resetRefCnt();
             buf.discardMarks();
