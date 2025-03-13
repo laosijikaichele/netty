@@ -617,6 +617,12 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
         private boolean allocate(int size, int sizeBucket, int maxCapacity, AdaptiveByteBuf buf) {
             recordAllocationSize(sizeBucket);
             Chunk curr = current;
+            Chunk nextInLineTmp = nextInLine;
+            if (curr != null && nextInLineTmp != null) {
+                if (curr == nextInLineTmp) {
+                    throw new Error("Corrupted status");
+                }
+            }
             if (curr != null) {
                 // We have a Chunk that has some space left.
                 if (curr.remainingCapacity() > size) {
@@ -1042,6 +1048,12 @@ final class AdaptivePoolingAllocator implements AdaptiveByteBufAllocator.Adaptiv
             allocator.allocate(newCapacity, maxCapacity(), this);
             tmpNioBuf.put(data);
             tmpNioBuf.clear();
+            try {
+                // Make the race condition a little easier to happen.
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             chunk.release();
             this.readerIndex = readerIndex;
             this.writerIndex = writerIndex;
