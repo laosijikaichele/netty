@@ -65,6 +65,8 @@ final class PlatformDependent0 {
 
     private static final Method VIRTUAL_THREAD_CHECK_METHOD = getVirtualThreadCheckMethod();
 
+    private static final Class<?> BASE_VIRTUAL_THREAD_CLASS = getBaseVirtualThreadClass();
+
     static final Unsafe UNSAFE;
 
     // constants borrowed from murmur3
@@ -563,6 +565,22 @@ final class PlatformDependent0 {
         }
     }
 
+    private static Class<?> getBaseVirtualThreadClass() {
+        if (JAVA_VERSION < 19) {
+            return null;
+        }
+        try {
+            return Class.forName("java.lang.BaseVirtualThread", false, ClassLoader.getSystemClassLoader());
+        } catch (Throwable e) {
+            if (logger.isTraceEnabled()) {
+                logger.debug("java.lang.BaseVirtualThread is not available: ", e);
+            } else {
+                logger.debug("java.lang.BaseVirtualThread is not available: ", e.getMessage());
+            }
+            return null;
+        }
+    }
+
     /**
      * @param thread the thread to be checked.
      * @return
@@ -573,7 +591,14 @@ final class PlatformDependent0 {
      * {@code -1}: Not able to check the thread type.
      */
     static int checkVirtualThread(Thread thread) {
-        if (JAVA_VERSION < 19 || thread instanceof FastThreadLocalThread) {
+        if (thread == null || JAVA_VERSION < 19 || thread instanceof FastThreadLocalThread) {
+            return 1;
+        }
+        if (BASE_VIRTUAL_THREAD_CLASS != null) {
+            return BASE_VIRTUAL_THREAD_CLASS.isInstance(thread) ? 0 : 1;
+        }
+        Class<?> clazz = thread.getClass();
+        if (clazz == Thread.class || clazz.getSuperclass() == Thread.class) {
             return 1;
         }
         if (VIRTUAL_THREAD_CHECK_METHOD == null) {
