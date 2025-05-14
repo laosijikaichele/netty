@@ -203,4 +203,9 @@ public class CloseWebSocketFrame extends WebSocketFrame {
                     statusCode);
         }
     }
+
+    @Override
+    protected final WebSocketFrameOpcode getOpcode() {
+        return WebSocketFrameOpcode.OPCODE_CLOSE;
+    }
 }

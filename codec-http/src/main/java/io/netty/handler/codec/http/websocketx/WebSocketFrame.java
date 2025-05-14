@@ -106,4 +106,8 @@ public abstract class WebSocketFrame extends DefaultByteBufHolder {
         super.touch(hint);
         return this;
     }
+
+    protected WebSocketFrameOpcode getOpcode() {
+        return null;
+    }
 }

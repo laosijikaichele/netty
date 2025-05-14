@@ -64,6 +64,7 @@ import java.nio.ByteOrder;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static io.netty.handler.codec.http.websocketx.WebSocketFrameOpcode.OPCODE_PING;
 /**
  * <p>
  * Encodes a web socket frame into wire protocol version 8 format. This code was forked from <a
@@ -73,13 +74,6 @@ import java.util.concurrent.ThreadLocalRandom;
 public class WebSocket08FrameEncoder extends MessageToMessageEncoder<WebSocketFrame> implements WebSocketFrameEncoder {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(WebSocket08FrameEncoder.class);
-
-    private static final byte OPCODE_CONT = 0x0;
-    private static final byte OPCODE_TEXT = 0x1;
-    private static final byte OPCODE_BINARY = 0x2;
-    private static final byte OPCODE_CLOSE = 0x8;
-    private static final byte OPCODE_PING = 0x9;
-    private static final byte OPCODE_PONG = 0xA;
 
     /**
      * The size threshold for gathering writes. Non-Masked messages bigger than this size will be sent fragmented as
@@ -106,22 +100,11 @@ public class WebSocket08FrameEncoder extends MessageToMessageEncoder<WebSocketFr
     protected void encode(ChannelHandlerContext ctx, WebSocketFrame msg, List<Object> out) throws Exception {
         final ByteBuf data = msg.content();
 
-        byte opcode;
-        if (msg instanceof TextWebSocketFrame) {
-            opcode = OPCODE_TEXT;
-        } else if (msg instanceof PingWebSocketFrame) {
-            opcode = OPCODE_PING;
-        } else if (msg instanceof PongWebSocketFrame) {
-            opcode = OPCODE_PONG;
-        } else if (msg instanceof CloseWebSocketFrame) {
-            opcode = OPCODE_CLOSE;
-        } else if (msg instanceof BinaryWebSocketFrame) {
-            opcode = OPCODE_BINARY;
-        } else if (msg instanceof ContinuationWebSocketFrame) {
-            opcode = OPCODE_CONT;
-        } else {
+        WebSocketFrameOpcode opcodeEnum = msg.getOpcode();
+        if (opcodeEnum == null) {
             throw new UnsupportedOperationException("Cannot encode frame of type: " + msg.getClass().getName());
         }
+        byte opcode = opcodeEnum.opcode;
 
         int length = data.readableBytes();
 
@@ -136,7 +119,7 @@ public class WebSocket08FrameEncoder extends MessageToMessageEncoder<WebSocketFr
         b0 |= msg.rsv() % 8 << 4;
         b0 |= opcode % 128;
 
-        if (opcode == OPCODE_PING && length > 125) {
+        if (opcodeEnum == OPCODE_PING && length > 125) {
             throw new TooLongFrameException("invalid payload for PING (payload length must be <= 125, was " + length);
         }
 

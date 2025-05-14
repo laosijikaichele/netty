@@ -137,4 +137,9 @@ public class TextWebSocketFrame extends WebSocketFrame {
         super.touch(hint);
         return this;
     }
+
+    @Override
+    protected final WebSocketFrameOpcode getOpcode() {
+        return WebSocketFrameOpcode.OPCODE_TEXT;
+    }
 }

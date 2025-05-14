@@ -97,4 +97,9 @@ public class PingWebSocketFrame extends WebSocketFrame {
         super.touch(hint);
         return this;
     }
+
+    @Override
+    protected final WebSocketFrameOpcode getOpcode() {
+        return WebSocketFrameOpcode.OPCODE_PING;
+    }
 }
