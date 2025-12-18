@@ -254,6 +254,7 @@ final class AdaptivePoolingAllocator {
     }
 
     private AdaptiveByteBuf allocate(int size, int maxCapacity, Thread currentThread, AdaptiveByteBuf buf) {
+        boolean isReallocation = buf != null;
         AdaptiveByteBuf allocated = null;
         if (size <= MAX_POOLED_BUF_SIZE) {
             final int index = sizeClassIndexOf(size);
@@ -264,13 +265,16 @@ final class AdaptivePoolingAllocator {
                 magazineGroups =  sizeClassedMagazineGroups;
             }
             if (index < magazineGroups.length) {
-                allocated = magazineGroups[index].allocate(size, maxCapacity, currentThread, buf);
+                allocated = magazineGroups[index].allocate(size, maxCapacity, currentThread, buf, isReallocation);
             } else if (!IS_LOW_MEM) {
-                allocated = largeBufferMagazineGroup.allocate(size, maxCapacity, currentThread, buf);
+                allocated = largeBufferMagazineGroup.allocate(size, maxCapacity, currentThread, buf, isReallocation);
             }
         }
         if (allocated == null) {
             allocated = allocateFallback(size, maxCapacity, currentThread, buf);
+        }
+        if (!isReallocation) {
+            allocated.setIndex0(0, 0);
         }
         return allocated;
     }
@@ -390,9 +394,8 @@ final class AdaptivePoolingAllocator {
             }
         }
 
-        public AdaptiveByteBuf allocate(int size, int maxCapacity, Thread currentThread, AdaptiveByteBuf buf) {
-            boolean reallocate = buf != null;
-
+        public AdaptiveByteBuf allocate(int size, int maxCapacity, Thread currentThread, AdaptiveByteBuf buf,
+                                        boolean reallocate) {
             // Path for thread-local allocation.
             Magazine tlMag = threadLocalMagazine;
             if (tlMag != null) {
@@ -1261,7 +1264,7 @@ final class AdaptivePoolingAllocator {
             Chunk chunk = this;
             chunk.retain();
             try {
-                buf.init(delegate, chunk, 0, 0, startIndex, size, startingCapacity, maxCapacity);
+                buf.init(delegate, chunk, startIndex, size, startingCapacity, maxCapacity);
                 chunk = null;
             } finally {
                 if (chunk != null) {
@@ -1326,7 +1329,7 @@ final class AdaptivePoolingAllocator {
             Chunk chunk = this;
             chunk.retain();
             try {
-                buf.init(delegate, chunk, 0, 0, startIndex, size, startingCapacity, maxCapacity);
+                buf.init(delegate, chunk, startIndex, size, startingCapacity, maxCapacity);
                 chunk = null;
             } finally {
                 if (chunk != null) {
@@ -1394,14 +1397,12 @@ final class AdaptivePoolingAllocator {
             handle = ObjectUtil.checkNotNull(recyclerHandle, "recyclerHandle");
         }
 
-        void init(AbstractByteBuf unwrapped, Chunk wrapped, int readerIndex, int writerIndex,
-                  int startIndex, int size, int capacity, int maxCapacity) {
+        void init(AbstractByteBuf unwrapped, Chunk wrapped, int startIndex, int size, int capacity, int maxCapacity) {
             this.startIndex = startIndex;
             chunk = wrapped;
             length = size;
             maxFastCapacity = capacity;
             maxCapacity(maxCapacity);
-            setIndex0(readerIndex, writerIndex);
             hasArray = unwrapped.hasArray();
             hasMemoryAddress = unwrapped.hasMemoryAddress();
             rootParent = unwrapped;
@@ -1463,16 +1464,12 @@ final class AdaptivePoolingAllocator {
             // Reallocation required.
             Chunk chunk = this.chunk;
             AdaptivePoolingAllocator allocator = chunk.allocator;
-            int readerIndex = this.readerIndex;
-            int writerIndex = this.writerIndex;
             int baseOldRootIndex = startIndex;
             int oldCapacity = length;
             AbstractByteBuf oldRoot = rootParent();
             allocator.reallocate(newCapacity, maxCapacity(), this);
             oldRoot.getBytes(baseOldRootIndex, this, 0, oldCapacity);
             chunk.releaseSegment(baseOldRootIndex);
-            this.readerIndex = readerIndex;
-            this.writerIndex = writerIndex;
             return this;
         }
 
