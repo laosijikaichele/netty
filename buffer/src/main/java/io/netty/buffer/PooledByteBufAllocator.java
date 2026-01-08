@@ -321,7 +321,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
             List<PoolArenaMetric> metrics = new ArrayList<PoolArenaMetric>(heapArenas.length);
             final SizeClasses sizeClasses = new SizeClasses(pageSize, pageShifts, chunkSize, 0);
             for (int i = 0; i < heapArenas.length; i ++) {
-                PoolArena.HeapArena arena = new PoolArena.HeapArena(this, sizeClasses);
+                PoolArena.HeapArena arena = new PoolArena.HeapArena(this, sizeClasses, useThreadLocal);
                 heapArenas[i] = arena;
                 metrics.add(arena);
             }
@@ -337,7 +337,7 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
             final SizeClasses sizeClasses = new SizeClasses(pageSize, pageShifts, chunkSize,
                     directMemoryCacheAlignment);
             for (int i = 0; i < directArenas.length; i ++) {
-                PoolArena.DirectArena arena = new PoolArena.DirectArena(this, sizeClasses);
+                PoolArena.DirectArena arena = new PoolArena.DirectArena(this, sizeClasses, useThreadLocal);
                 directArenas[i] = arena;
                 metrics.add(arena);
             }

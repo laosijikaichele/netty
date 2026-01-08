@@ -669,9 +669,13 @@ abstract class PoolArena<T> implements PoolArenaMetric {
         private final ObjectPool.Handle<PooledHeapByteBuf> handle;
 
         HeapArena(PooledByteBufAllocator parent, SizeClasses sizeClass) {
+            this(parent, sizeClass, true);
+        }
+
+        HeapArena(PooledByteBufAllocator parent, SizeClasses sizeClass, boolean useThreadLocal) {
             super(parent, sizeClass);
             lastDestroyedChunk = new AtomicReference<>();
-            if (PlatformDependent.javaVersion() < 19 || ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD <= 0) {
+            if (useThreadLocal) {
                 bufferQueue = null;
                 handle = new ObjectPool.Handle<PooledHeapByteBuf>() {
                     @Override
@@ -758,8 +762,12 @@ abstract class PoolArena<T> implements PoolArenaMetric {
         private final ObjectPool.Handle<PooledByteBuf<ByteBuffer>> handle;
 
         DirectArena(PooledByteBufAllocator parent, SizeClasses sizeClass) {
+            this(parent, sizeClass, true);
+        }
+
+        DirectArena(PooledByteBufAllocator parent, SizeClasses sizeClass, boolean useThreadLocal) {
             super(parent, sizeClass);
-            if (PlatformDependent.javaVersion() < 19 || ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD <= 0) {
+            if (useThreadLocal) {
                 bufferQueue = null;
                 handle = new ObjectPool.Handle<PooledByteBuf<ByteBuffer>>() {
                     @Override
