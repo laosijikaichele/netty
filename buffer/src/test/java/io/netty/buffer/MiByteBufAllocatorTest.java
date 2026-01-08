@@ -48,12 +48,12 @@ public class MiByteBufAllocatorTest extends AbstractByteBufAllocatorTest<MiByteB
     public void testUnsafeHeapBufferAndUnsafeDirectBuffer() {
         MiByteBufAllocator allocator = newUnpooledAllocator();
         ByteBuf directBuffer = allocator.directBuffer();
-        assertInstanceOf(directBuffer, MiMallocByteBufAllocator.MiByteBuf.class);
+        assertInstanceOf(directBuffer, PooledByteBuf.class);
         assertTrue(directBuffer.isDirect());
         directBuffer.release();
 
         ByteBuf heapBuffer = allocator.heapBuffer();
-        assertInstanceOf(heapBuffer, MiMallocByteBufAllocator.MiByteBuf.class);
+        assertInstanceOf(heapBuffer, PooledByteBuf.class);
         assertFalse(heapBuffer.isDirect());
         heapBuffer.release();
     }
@@ -71,11 +71,10 @@ public class MiByteBufAllocatorTest extends AbstractByteBufAllocatorTest<MiByteB
         // Double the size of the buffer
         buffer.capacity(capacity << 1);
         capacity = buffer.capacity();
-        // This is a new size class, and a new magazine with a new chunk
         assertEquals(expectedUsedMemory(allocator, capacity), metric.usedDirectMemory(), buffer.toString());
 
         buffer.release();
-        // Memory is still held by the magazines
+        // Memory is still held
         assertEquals(expectedUsedMemory(allocator, capacity), metric.usedDirectMemory());
     }
 
@@ -92,11 +91,10 @@ public class MiByteBufAllocatorTest extends AbstractByteBufAllocatorTest<MiByteB
         // Double the size of the buffer
         buffer.capacity(capacity << 1);
         capacity = buffer.capacity();
-        // This is a new size class, and a new magazine with a new chunk
         assertEquals(expectedUsedMemory(allocator, capacity), metric.usedHeapMemory(), buffer.toString());
 
         buffer.release();
-        // Memory is still held by the magazines
+        // Memory is still held
         assertEquals(expectedUsedMemory(allocator, capacity), metric.usedHeapMemory());
     }
 
