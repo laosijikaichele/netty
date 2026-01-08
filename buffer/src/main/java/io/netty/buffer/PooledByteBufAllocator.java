@@ -65,8 +65,8 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
         }
     };
 
-    static final int ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD =
-            SystemPropertyUtil.getInt("io.netty.allocator.arenaBufferQueueCapacityForVirtualThread", 1024);
+    static final int ARENA_BUFFER_QUEUE_CAPACITY_FOR_NON_THREAD_LOCAL =
+            SystemPropertyUtil.getInt("io.netty.allocator.arenaBufferQueueCapacityForNonThreadLocal", 1024);
 
     static {
         int defaultAlignment = SystemPropertyUtil.getInt(
@@ -184,8 +184,8 @@ public class PooledByteBufAllocator extends AbstractByteBufAllocator implements 
                     DEFAULT_MAX_CACHED_BYTEBUFFERS_PER_CHUNK);
             logger.debug("-Dio.netty.allocator.disableCacheFinalizersForFastThreadLocalThreads: {}",
                          DEFAULT_DISABLE_CACHE_FINALIZERS_FOR_FAST_THREAD_LOCAL_THREADS);
-            logger.debug("-Dio.netty.allocator.arenaBufferQueueCapacityForVirtualThread: {}",
-                    ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD);
+            logger.debug("-Dio.netty.allocator.arenaBufferQueueCapacityForNonThreadLocal: {}",
+                    ARENA_BUFFER_QUEUE_CAPACITY_FOR_NON_THREAD_LOCAL);
         }
     }
 

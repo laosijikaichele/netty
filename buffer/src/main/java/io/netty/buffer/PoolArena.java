@@ -20,7 +20,6 @@ import io.netty.util.internal.CleanableDirectBuffer;
 import io.netty.util.internal.ObjectPool;
 import io.netty.util.internal.PlatformDependent;
 import io.netty.util.internal.StringUtil;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,9 +29,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
-
 import static io.netty.buffer.PoolChunk.isSubpage;
-import static io.netty.buffer.PooledByteBufAllocator.ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD;
+import static io.netty.buffer.PooledByteBufAllocator.ARENA_BUFFER_QUEUE_CAPACITY_FOR_NON_THREAD_LOCAL;
 import static java.lang.Math.max;
 
 abstract class PoolArena<T> implements PoolArenaMetric {
@@ -684,7 +682,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
                     }
                 };
             } else {
-                int qSize = Math.max(ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD, 2);
+                int qSize = Math.max(ARENA_BUFFER_QUEUE_CAPACITY_FOR_NON_THREAD_LOCAL, 2);
                 bufferQueue = PlatformDependent.newFixedMpmcQueue(qSize);
                 handle = new ObjectPool.Handle<PooledHeapByteBuf>() {
                     @Override
@@ -776,7 +774,7 @@ abstract class PoolArena<T> implements PoolArenaMetric {
                     }
                 };
             } else {
-                int qSize = Math.max(ARENA_BUFFER_QUEUE_CAPACITY_FOR_VIRTUAL_THREAD, 2);
+                int qSize = Math.max(ARENA_BUFFER_QUEUE_CAPACITY_FOR_NON_THREAD_LOCAL, 2);
                 bufferQueue = PlatformDependent.newFixedMpmcQueue(qSize);
                 handle = new ObjectPool.Handle<PooledByteBuf<ByteBuffer>>() {
                     @Override
