@@ -35,7 +35,6 @@ import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
