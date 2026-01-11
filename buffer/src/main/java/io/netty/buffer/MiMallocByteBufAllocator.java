@@ -34,7 +34,10 @@ import java.nio.channels.GatheringByteChannel;
 import java.nio.channels.ScatteringByteChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,7 +61,7 @@ final class MiMallocByteBufAllocator {
     // 64 KiB
     private static final int SEGMENT_SLICE_SHIFT = 16;
     // 4 Mib
-    private static final int DEFAULT_SEGMENT_SHIFT = SEGMENT_SLICE_SHIFT + 9;
+    private static final int DEFAULT_SEGMENT_SHIFT = SEGMENT_SLICE_SHIFT + 6;
     // 4 MiB
     private static final int DEFAULT_SEGMENT_SIZE = 1 << DEFAULT_SEGMENT_SHIFT;
 
@@ -310,6 +313,7 @@ final class MiMallocByteBufAllocator {
             if (collect == ABANDON) {
                 heapVisitPages(collect, VISIT_WORK_TYPE_MARK_PAGE_NEVER_DELAYED_FREE);
                 blockDeque.clear();
+                this.freeSpanSegments();
             }
             // Free all current thread's delayed blocks.
             // (If during abandoning, after this, there are no more thread-delayed references into the pages.)
@@ -843,6 +847,9 @@ final class MiMallocByteBufAllocator {
 
         private void segmentFree(Segment segment, boolean force) {
             if (segment.kind != SEGMENT_HUGE) {
+                if (!force && this.segmentTld.segmentsCount < 8) {
+                    return;
+                }
                 // Remove the free spans.
                 Span slice = segment.slices[0];
                 Span end = segment.slices[segment.sliceEntries];
@@ -857,6 +864,24 @@ final class MiMallocByteBufAllocator {
             assert assertSegmentNotExistInSpanQueue(segment);
             // Free it.
             segmentOsFree(segment);
+        }
+
+        private void freeSpanSegments() {
+            Set<Segment> segments = new HashSet<Segment>();
+            SpanQueue[] spanQueues = this.segmentTld.spanQueues;
+            for (SpanQueue sq : spanQueues) {
+                Span span = sq.firstSpan;
+                while (span != null) {
+                    Segment segment = span.segment;
+                    if (segment.usedPages == 0) {
+                        segments.add(segment);
+                    }
+                    span = span.nextSpan;
+                }
+            }
+            for (Segment segment : segments) {
+                segmentFree(segment, true);
+            }
         }
 
         // Only used for assertion.
