@@ -180,7 +180,7 @@ final class MiMallocByteBufAllocator {
     @Override
     protected void finalize() throws Throwable {
         try {
-            freeAllSharedSegments();
+            abandonAllSharedSegments();
             freeAllAbandonedSegments();
         } finally {
             super.finalize();
@@ -200,7 +200,7 @@ final class MiMallocByteBufAllocator {
         }
     }
 
-    private void freeAllSharedSegments() {
+    private void abandonAllSharedSegments() {
         StampedLock lock;
         long lockStamp;
         LocalHeap heap;
