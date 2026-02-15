@@ -57,7 +57,10 @@ public final class RefCnt {
      */
     volatile int value;
 
+    public int valuePlain;
+
     public RefCnt() {
+        valuePlain = 2;
         switch (REF_CNT_IMPL) {
         case UNSAFE:
             UnsafeRefCnt.init(this);

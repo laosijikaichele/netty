@@ -122,7 +122,7 @@ final class AdaptivePoolingAllocator {
      * same as the maximum number of magazines per magazine group.
      */
     private static final int CHUNK_REUSE_QUEUE = Math.max(2, SystemPropertyUtil.getInt(
-            "io.netty.allocator.chunkReuseQueueCapacity", NettyRuntime.availableProcessors() * 2));
+            "io.netty.allocator.chunkReuseQueueCapacity", 1024));
 
     /**
      * The capacity if the magazine local buffer queue. This queue just pools the outer ByteBuf instance and not
@@ -1144,11 +1144,19 @@ final class AdaptivePoolingAllocator {
         }
 
         private void retain() {
-                RefCnt.retain(refCnt);
+//          RefCnt.retain(refCnt);
+            refCnt.valuePlain += 2;
         }
 
         protected boolean release() {
-            boolean deallocate = RefCnt.release(refCnt);
+//          boolean deallocate = RefCnt.release(refCnt);
+            boolean deallocate = false;
+            if (refCnt.valuePlain == 2) {
+                refCnt.valuePlain = 1;
+                deallocate = true;
+            } else {
+                refCnt.valuePlain -= 2;
+            }
             if (deallocate) {
                 deallocate();
             }
