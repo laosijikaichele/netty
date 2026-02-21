@@ -2220,7 +2220,7 @@ final class MiMallocByteBufAllocator {
             }
             this.block = block;
             this.length = length;
-            this.maxFastCapacity = Math.min(block.blockBytes, maxCapacity);
+            this.maxFastCapacity = block.blockBytes;
             this.adjustment = block.blockAdjustment;
             maxCapacity(maxCapacity);
             this.rootParent = block.page.segment.delegate;
@@ -2246,12 +2246,12 @@ final class MiMallocByteBufAllocator {
         }
 
         public ByteBuf capacity(int newCapacity) {
+            checkNewCapacity(newCapacity);
             if (length <= newCapacity && newCapacity <= maxFastCapacity) {
                 ensureAccessible();
                 length = newCapacity;
                 return this;
             }
-            checkNewCapacity(newCapacity);
             if (newCapacity < capacity()) {
                 length = newCapacity;
                 trimIndicesToCapacity(newCapacity);
